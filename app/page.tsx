@@ -32,7 +32,8 @@ export default function Chat() {
     setIsLoading(true)
 
     try {
-      const response = await fetch('http://localhost:8000/api/chat', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'
+      const response = await fetch(`${apiUrl}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -66,13 +67,15 @@ export default function Chat() {
     <div className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-900">
       {/* Header */}
       <header className="border-b border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="mx-auto max-w-3xl">
-          <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
-            SELVE Chatbot
-          </h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Your personality framework assistant
-          </p>
+        <div className="mx-auto flex max-w-3xl items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+              SELVE Chatbot
+            </h1>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              Your personality framework assistant
+            </p>
+          </div>
         </div>
       </header>
 
