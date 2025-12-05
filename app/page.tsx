@@ -1,16 +1,28 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 interface Message {
   role: 'user' | 'assistant'
   content: string
 }
 
+interface Session {
+  id: string
+  title: string
+  createdAt: string
+  lastMessageAt: string
+}
+
 export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [streamingContent, setStreamingContent] = useState('')
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [isLoadingSession, setIsLoadingSession] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -19,7 +31,103 @@ export default function Chat() {
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages])
+  }, [messages, streamingContent])
+
+  // Initialize or restore session on mount
+  useEffect(() => {
+    initializeSession()
+  }, [])
+
+  const initializeSession = async () => {
+    try {
+      setIsLoadingSession(true)
+
+      // Check if we have a session ID in localStorage
+      const storedSessionId = localStorage.getItem('selve_chat_session_id')
+
+      if (storedSessionId) {
+        // Try to restore existing session
+        const session = await restoreSession(storedSessionId)
+        if (session) {
+          setSessionId(session.id)
+          // Load messages from session
+          if (session.messages && session.messages.length > 0) {
+            const sessionMessages = session.messages.map((msg: any) => ({
+              role: msg.role,
+              content: msg.content
+            }))
+            setMessages(sessionMessages)
+          }
+          console.log('✅ Session restored:', session.id)
+          return
+        }
+      }
+
+      // No existing session, create new one
+      const newSession = await createNewSession()
+      if (newSession) {
+        setSessionId(newSession.id)
+        localStorage.setItem('selve_chat_session_id', newSession.id)
+        console.log('✅ New session created:', newSession.id)
+      }
+    } catch (error) {
+      console.error('❌ Session initialization failed:', error)
+      // Continue without session - messages will be stateless
+    } finally {
+      setIsLoadingSession(false)
+    }
+  }
+
+  const createNewSession = async () => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'
+
+      // For now, use dummy user IDs - will get real ones from Clerk later
+      const userId = 'temp_user_' + Date.now()
+      const clerkUserId = 'temp_clerk_' + Date.now()
+
+      const response = await fetch(`${apiUrl}/api/sessions/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          clerkUserId,
+          title: 'New Conversation'
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to create session: ${response.statusText}`)
+      }
+
+      const session = await response.json()
+      return session
+    } catch (error) {
+      console.error('Error creating session:', error)
+      return null
+    }
+  }
+
+  const restoreSession = async (sessionId: string) => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'
+
+      const response = await fetch(`${apiUrl}/api/sessions/${sessionId}`)
+
+      if (!response.ok) {
+        // Session not found or error, clear localStorage
+        localStorage.removeItem('selve_chat_session_id')
+        return null
+      }
+
+      const session = await response.json()
+      return session
+    } catch (error) {
+      console.error('Error restoring session:', error)
+      localStorage.removeItem('selve_chat_session_id')
+      return null
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,40 +135,98 @@ export default function Chat() {
     if (!input.trim() || isLoading) return
 
     const userMessage: Message = { role: 'user', content: input }
+    const currentInput = input
+
     setMessages(prev => [...prev, userMessage])
     setInput('')
     setIsLoading(true)
+    setStreamingContent('')
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'
-      const response = await fetch(`${apiUrl}/api/chat`, {
+
+      // Use streaming endpoint
+      const response = await fetch(`${apiUrl}/api/chat/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: input,
+          message: currentInput,
           conversation_history: messages,
-          use_rag: true
+          use_rag: true,
+          session_id: sessionId
         })
       })
 
       if (!response.ok) throw new Error('Failed to get response')
 
-      const data = await response.json()
-      const assistantMessage: Message = {
-        role: 'assistant',
-        content: data.response
-      }
+      // Read streaming response
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+      let accumulatedContent = ''
 
-      setMessages(prev => [...prev, assistantMessage])
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read()
+
+          if (done) break
+
+          const chunk = decoder.decode(value)
+          const lines = chunk.split('\n')
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6))
+
+                if (data.chunk) {
+                  accumulatedContent += data.chunk
+                  setStreamingContent(accumulatedContent)
+                }
+
+                if (data.done) {
+                  // Streaming complete, add final message
+                  const assistantMessage: Message = {
+                    role: 'assistant',
+                    content: accumulatedContent
+                  }
+                  setMessages(prev => [...prev, assistantMessage])
+                  setStreamingContent('')
+                }
+              } catch (e) {
+                // Skip invalid JSON lines
+              }
+            }
+          }
+        }
+      }
     } catch (error) {
       console.error('Error:', error)
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: 'Sorry, I encountered an error. Please try again.'
       }])
+      setStreamingContent('')
     } finally {
       setIsLoading(false)
     }
+  }
+
+  if (isLoadingSession) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-900">
+        <div className="text-center">
+          <div className="mb-4 text-6xl">💬</div>
+          <h2 className="mb-2 text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+            Loading your conversation...
+          </h2>
+          <div className="flex justify-center space-x-2">
+            <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600 [animation-delay:-0.3s]"></div>
+            <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600 [animation-delay:-0.15s]"></div>
+            <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600"></div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -74,6 +240,11 @@ export default function Chat() {
             </h1>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
               Your personality framework assistant
+              {sessionId && (
+                <span className="ml-2 text-xs text-zinc-400">
+                  • Session active
+                </span>
+              )}
             </p>
           </div>
         </div>
@@ -82,7 +253,7 @@ export default function Chat() {
       {/* Messages */}
       <main className="flex-1 overflow-y-auto px-6 py-8">
         <div className="mx-auto max-w-3xl space-y-6">
-          {messages.length === 0 ? (
+          {messages.length === 0 && !streamingContent ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <div className="mb-4 text-6xl">💬</div>
               <h2 className="mb-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
@@ -93,36 +264,61 @@ export default function Chat() {
               </p>
             </div>
           ) : (
-            messages.map((message, index) => (
-              <div
-                key={index}
-                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
+            <>
+              {messages.map((message, index) => (
                 <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                    message.role === 'user'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-800 dark:text-zinc-50 dark:ring-zinc-700'
-                  }`}
+                  key={index}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                    {message.content}
-                  </p>
+                  <div
+                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                      message.role === 'user'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-800 dark:text-zinc-50 dark:ring-zinc-700'
+                    }`}
+                  >
+                    {message.role === 'assistant' ? (
+                      <div className="prose prose-sm prose-zinc dark:prose-invert max-w-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                        {message.content}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))
-          )}
+              ))}
 
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="max-w-[80%] rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700">
-                <div className="flex space-x-2">
-                  <div className="h-2 w-2 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.3s]"></div>
-                  <div className="h-2 w-2 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.15s]"></div>
-                  <div className="h-2 w-2 animate-bounce rounded-full bg-zinc-400"></div>
+              {/* Streaming message */}
+              {streamingContent && (
+                <div className="flex justify-start">
+                  <div className="max-w-[80%] rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700">
+                    <div className="prose prose-sm prose-zinc dark:prose-invert max-w-none">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {streamingContent}
+                      </ReactMarkdown>
+                      <span className="inline-block h-4 w-0.5 animate-pulse bg-zinc-900 dark:bg-zinc-50 ml-0.5"></span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              )}
+
+              {/* Loading indicator (only when not streaming) */}
+              {isLoading && !streamingContent && (
+                <div className="flex justify-start">
+                  <div className="max-w-[80%] rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700">
+                    <div className="flex space-x-2">
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.3s]"></div>
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.15s]"></div>
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-zinc-400"></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           <div ref={messagesEndRef} />
