@@ -310,7 +310,8 @@ export default function Chat() {
           conversation_history: messages,
           use_rag: true,
           session_id: sessionId,
-          clerk_user_id: user?.id || null
+          clerk_user_id: user?.id || null,
+          selve_scores: userProfile?.has_scores ? userProfile.scores : null
         })
       })
 
