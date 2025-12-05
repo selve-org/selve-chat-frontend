@@ -17,6 +17,24 @@ interface Session {
   lastMessageAt: string
 }
 
+interface SelveScores {
+  LUMEN: number
+  AETHER: number
+  ORPHEUS: number
+  ORIN: number
+  LYRA: number
+  VARA: number
+  CHRONOS: number
+  KAEL: number
+}
+
+interface UserProfile {
+  has_scores: boolean
+  scores?: SelveScores
+  archetype?: string
+  profile_pattern?: string
+}
+
 export default function Chat() {
   const { user, isLoaded: isUserLoaded } = useUser()
   const [messages, setMessages] = useState<Message[]>([])
@@ -28,6 +46,8 @@ export default function Chat() {
   const [sessions, setSessions] = useState<Session[]>([])
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -47,8 +67,37 @@ export default function Chat() {
   useEffect(() => {
     if (isUserLoaded && user) {
       loadUserSessions()
+      loadUserProfile()
     }
   }, [isUserLoaded, user])
+
+  const loadUserProfile = async () => {
+    if (!user?.id) return
+
+    try {
+      setIsLoadingProfile(true)
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'
+      const response = await fetch(`${apiUrl}/api/users/${user.id}/scores`)
+
+      if (!response.ok) {
+        console.error('Failed to fetch user profile')
+        return
+      }
+
+      const profile = await response.json()
+      setUserProfile(profile)
+
+      if (profile.has_scores) {
+        console.log('✅ SELVE scores loaded:', profile.scores)
+      } else {
+        console.log('ℹ️  No SELVE scores found for user')
+      }
+    } catch (error) {
+      console.error('❌ Error loading user profile:', error)
+    } finally {
+      setIsLoadingProfile(false)
+    }
+  }
 
   const initializeSession = async () => {
     try {
@@ -425,6 +474,47 @@ export default function Chat() {
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+
+          {/* SELVE Scores Widget */}
+          <div className="border-t border-zinc-200 px-3 py-4 dark:border-zinc-800">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+              Your SELVE Profile
+            </h3>
+
+            {isLoadingProfile ? (
+              <div className="flex items-center justify-center py-4">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
+              </div>
+            ) : userProfile && userProfile.has_scores ? (
+              <div className="space-y-2">
+                {Object.entries(userProfile.scores!).map(([dimension, score]) => (
+                  <div key={dimension}>
+                    <div className="mb-1 flex items-center justify-between text-xs">
+                      <span className="font-medium text-zinc-700 dark:text-zinc-300">{dimension}</span>
+                      <span className="text-zinc-500 dark:text-zinc-400">{Math.round(score)}</span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-600 transition-all duration-300"
+                        style={{ width: `${score}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
+                {userProfile.archetype && (
+                  <div className="mt-3 rounded-lg bg-blue-50 px-3 py-2 text-xs dark:bg-blue-900/20">
+                    <p className="font-medium text-blue-900 dark:text-blue-300">
+                      {userProfile.archetype}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Complete your SELVE assessment to see your personality profile here.
+              </p>
             )}
           </div>
         </div>
