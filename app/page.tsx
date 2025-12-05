@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useUser } from '@clerk/nextjs'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
@@ -17,6 +18,7 @@ interface Session {
 }
 
 export default function Chat() {
+  const { user, isLoaded: isUserLoaded } = useUser()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -82,9 +84,9 @@ export default function Chat() {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'
 
-      // For now, use dummy user IDs - will get real ones from Clerk later
-      const userId = 'temp_user_' + Date.now()
-      const clerkUserId = 'temp_clerk_' + Date.now()
+      // Use real user IDs from Clerk if available
+      const userId = user?.id || 'anonymous_' + Date.now()
+      const clerkUserId = user?.id || 'anonymous_' + Date.now()
 
       const response = await fetch(`${apiUrl}/api/sessions/`, {
         method: 'POST',
@@ -153,7 +155,8 @@ export default function Chat() {
           message: currentInput,
           conversation_history: messages,
           use_rag: true,
-          session_id: sessionId
+          session_id: sessionId,
+          clerk_user_id: user?.id || null
         })
       })
 
@@ -211,13 +214,13 @@ export default function Chat() {
     }
   }
 
-  if (isLoadingSession) {
+  if (!isUserLoaded || isLoadingSession) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-900">
         <div className="text-center">
           <div className="mb-4 text-6xl">💬</div>
           <h2 className="mb-2 text-xl font-semibold text-zinc-900 dark:text-zinc-50">
-            Loading your conversation...
+            {!isUserLoaded ? 'Loading your profile...' : 'Loading your conversation...'}
           </h2>
           <div className="flex justify-center space-x-2">
             <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600 [animation-delay:-0.3s]"></div>
@@ -247,6 +250,27 @@ export default function Chat() {
               )}
             </p>
           </div>
+
+          {/* User Profile */}
+          {user && (
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                  {user.firstName || user.username || 'User'}
+                </div>
+                <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {user.primaryEmailAddress?.emailAddress}
+                </div>
+              </div>
+              {user.imageUrl && (
+                <img
+                  src={user.imageUrl}
+                  alt="Profile"
+                  className="h-10 w-10 rounded-full ring-2 ring-zinc-200 dark:ring-zinc-700"
+                />
+              )}
+            </div>
+          )}
         </div>
       </header>
 
