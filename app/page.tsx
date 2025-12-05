@@ -225,11 +225,28 @@ export default function Chat() {
 
     const userMessage: Message = { role: 'user', content: input }
     const currentInput = input
+    const isFirstMessage = messages.length === 0
 
     setMessages(prev => [...prev, userMessage])
     setInput('')
     setIsLoading(true)
     setStreamingContent('')
+
+    // Auto-generate title after first message (non-blocking)
+    if (isFirstMessage && sessionId) {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'
+      fetch(`${apiUrl}/api/sessions/${sessionId}/generate-title`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: currentInput })
+      }).then(async (res) => {
+        if (res.ok) {
+          await loadUserSessions() // Refresh sidebar with new title
+        }
+      }).catch(() => {
+        // Silent fail - title generation is non-critical
+      })
+    }
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'
