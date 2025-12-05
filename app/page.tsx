@@ -48,6 +48,8 @@ export default function Chat() {
   const [error, setError] = useState<string | null>(null)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [isLoadingProfile, setIsLoadingProfile] = useState(false)
+  const [compressionNeeded, setCompressionNeeded] = useState(false)
+  const [totalTokens, setTotalTokens] = useState<number | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -349,6 +351,12 @@ export default function Chat() {
                   }
                   setMessages(prev => [...prev, assistantMessage])
                   setStreamingContent('')
+
+                  // Check compression status
+                  if (data.compression_needed) {
+                    setCompressionNeeded(true)
+                    setTotalTokens(data.total_tokens)
+                  }
                 }
               } catch (e) {
                 // Skip invalid JSON lines
@@ -404,6 +412,32 @@ export default function Chat() {
             <button
               onClick={() => setError(null)}
               className="ml-auto rounded p-1 hover:bg-red-700"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Compression Notification */}
+      {compressionNeeded && (
+        <div className="fixed top-20 right-4 z-50 max-w-md rounded-lg bg-blue-600 px-4 py-3 text-white shadow-lg animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-3">
+            <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <div className="flex-1">
+              <p className="text-sm font-medium">Conversation getting long!</p>
+              <p className="text-xs text-blue-100 mt-1">
+                {totalTokens ? `${Math.round(totalTokens / 1000)}K tokens used. ` : ''}
+                Older messages will be compressed to save context.
+              </p>
+            </div>
+            <button
+              onClick={() => setCompressionNeeded(false)}
+              className="ml-auto rounded p-1 hover:bg-blue-700 flex-shrink-0"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
