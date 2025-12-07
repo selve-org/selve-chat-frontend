@@ -208,6 +208,8 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     async (userMessage: string) => {
       if (!userMessage.trim()) return
 
+      const isFirstMessage = messages.length === 0
+
       setMessages((prev) => [...prev, { role: 'user', content: userMessage }])
       setIsLoading(true)
       setStreamingContent('')
@@ -241,6 +243,16 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
                 setMessages((prev) => [...prev, { role: 'assistant', content: fullContent }])
                 setStreamingContent('')
                 setThinkingStatus(null)
+                
+                // Auto-generate title for first message
+                if (isFirstMessage && sessionId) {
+                  fetch(`${API_URL}/api/sessions/${sessionId}/generate-title`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: userMessage }),
+                  }).catch((err) => console.error('Failed to generate title:', err))
+                }
+                
                 loadUserSessions()
               }
               break
@@ -258,6 +270,16 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
                     setMessages((prev) => [...prev, { role: 'assistant', content: fullContent }])
                     setStreamingContent('')
                     setThinkingStatus(null)
+                    
+                    // Auto-generate title for first message
+                    if (isFirstMessage && sessionId) {
+                      fetch(`${API_URL}/api/sessions/${sessionId}/generate-title`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: userMessage }),
+                      }).catch((err) => console.error('Failed to generate title:', err))
+                    }
+                    
                     loadUserSessions()
                   }
                   break
