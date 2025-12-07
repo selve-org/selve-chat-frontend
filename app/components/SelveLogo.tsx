@@ -11,14 +11,14 @@ export const SelveLogo = ({ className }: { className?: string }) => {
         priority
         className="pointer-events-none"
       />
-      <Image
+      {/* <Image
         src="/logo/selve-logo-text.svg"
         alt="SELVE"
         width={120}
         height={30}
         priority
         className="dark:invert pointer-events-none"
-      />
+      /> */}
     </div>
   );
 };

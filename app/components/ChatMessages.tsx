@@ -1,9 +1,8 @@
 'use client'
 
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 import ThinkingIndicator, { ThinkingStatus } from './ThinkingIndicator'
 import { useStreamingTypewriter } from '../hooks/useTypewriter'
+import MarkdownRenderer from './MarkdownRenderer'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -49,11 +48,7 @@ export default function ChatMessages({
             }`}
           >
             {message.role === 'assistant' ? (
-              <div className="prose prose-sm prose-invert max-w-none text-[#f4f0e6] prose-a:text-[#cbb2ff]">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {message.content}
-                </ReactMarkdown>
-              </div>
+              <MarkdownRenderer content={message.content} />
             ) : (
               <p className="whitespace-pre-wrap">
                 {message.content}
@@ -66,14 +61,10 @@ export default function ChatMessages({
       {displayContent && (
         <div className="flex justify-start">
           <div className="max-w-[80%] rounded-2xl bg-[#131210] px-4 py-3 text-[#f4f0e6] shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
-            <div className="prose prose-sm prose-invert max-w-none text-[#f4f0e6] prose-a:text-[#cbb2ff]">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {displayContent}
-              </ReactMarkdown>
-              {showCursor && (
-                <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-zinc-50" />
-              )}
-            </div>
+            <MarkdownRenderer content={displayContent} />
+            {showCursor && (
+              <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-zinc-50" />
+            )}
           </div>
         </div>
       )}

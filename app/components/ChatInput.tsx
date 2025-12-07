@@ -100,10 +100,6 @@ export default function ChatInput({
 
         {/* Bottom actions */}
         <div className="flex items-center justify-between text-xs text-zinc-500">
-          <div className="flex items-center gap-1.5 text-zinc-400">
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>Powered by GPT-5</span>
-          </div>
           <span className="text-zinc-500">Press Enter to send, Shift+Enter for new line</span>
         </div>
       </div>
