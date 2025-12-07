@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from 'react'
 import { useUser } from '@clerk/nextjs'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import ThinkingIndicator, { ThinkingStatus } from './components/ThinkingIndicator'
+import SourceCitations, { Citation } from './components/SourceCitations'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -35,6 +37,11 @@ interface UserProfile {
   profile_pattern?: string
 }
 
+// Map message index to citations
+interface MessageCitations {
+  [messageIndex: number]: Citation[]
+}
+
 export default function Chat() {
   const { user, isLoaded: isUserLoaded } = useUser()
   const [messages, setMessages] = useState<Message[]>([])
@@ -47,7 +54,9 @@ export default function Chat() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [messageCitations, setMessageCitations] = useState<MessageCitations>({})
   const [isLoadingProfile, setIsLoadingProfile] = useState(false)
+  const [thinkingStatus, setThinkingStatus] = useState<ThinkingStatus | null>(null)
   const [compressionNeeded, setCompressionNeeded] = useState(false)
   const [totalTokens, setTotalTokens] = useState<number | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -323,6 +332,7 @@ export default function Chat() {
       const reader = response.body?.getReader()
       const decoder = new TextDecoder()
       let accumulatedContent = ''
+      let pendingSources: Citation[] = []
 
       if (reader) {
         while (true) {
@@ -338,7 +348,27 @@ export default function Chat() {
               try {
                 const data = JSON.parse(line.slice(6))
 
-                if (data.chunk) {
+                // Handle status events for thinking UI
+                if (data.type === 'status') {
+                  setThinkingStatus({
+                    status: data.status,
+                    message: data.message,
+                    details: data.details
+                  })
+                  
+                  // Capture sources from complete event
+                  if (data.status === 'complete' && data.details?.sources) {
+                    // Store sources for the next assistant message
+                    pendingSources = data.details.sources
+                  }
+                  
+                  // Clear thinking status when complete
+                  if (data.status === 'complete') {
+                    setTimeout(() => setThinkingStatus(null), 500)
+                  }
+                }
+                // Handle text chunks
+                else if (data.chunk) {
                   accumulatedContent += data.chunk
                   setStreamingContent(accumulatedContent)
                 }
@@ -349,8 +379,20 @@ export default function Chat() {
                     role: 'assistant',
                     content: accumulatedContent
                   }
-                  setMessages(prev => [...prev, assistantMessage])
+                  setMessages(prev => {
+                    const newMessages = [...prev, assistantMessage]
+                    // Store citations for this message index
+                    if (pendingSources && pendingSources.length > 0) {
+                      const messageIndex = newMessages.length - 1
+                      setMessageCitations(prevCitations => ({
+                        ...prevCitations,
+                        [messageIndex]: pendingSources
+                      }))
+                    }
+                    return newMessages
+                  })
                   setStreamingContent('')
+                  setThinkingStatus(null)
 
                   // Check compression status
                   if (data.compression_needed) {
@@ -368,14 +410,18 @@ export default function Chat() {
     } catch (error) {
       console.error('Error:', error)
       setError('Failed to get response. Please try again.')
+      setThinkingStatus({ status: 'error', message: 'Something went wrong', details: {} })
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: 'Sorry, I encountered an error. Please try again.'
       }])
       setStreamingContent('')
 
-      // Clear error after 5 seconds
-      setTimeout(() => setError(null), 5000)
+      // Clear error and thinking status after 5 seconds
+      setTimeout(() => {
+        setError(null)
+        setThinkingStatus(null)
+      }, 5000)
     } finally {
       setIsLoading(false)
     }
@@ -635,11 +681,17 @@ export default function Chat() {
                       }`}
                     >
                       {message.role === 'assistant' ? (
-                        <div className="prose prose-sm prose-zinc dark:prose-invert max-w-none">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {message.content}
-                          </ReactMarkdown>
-                        </div>
+                        <>
+                          <div className="prose prose-sm prose-zinc dark:prose-invert max-w-none">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {message.content}
+                            </ReactMarkdown>
+                          </div>
+                          {/* Source citations for this message */}
+                          {messageCitations[index] && (
+                            <SourceCitations sources={messageCitations[index]} />
+                          )}
+                        </>
                       ) : (
                         <p className="whitespace-pre-wrap text-sm leading-relaxed">
                           {message.content}
@@ -663,8 +715,16 @@ export default function Chat() {
                   </div>
                 )}
 
-                {/* Loading indicator (only when not streaming) */}
-                {isLoading && !streamingContent && (
+                {/* Thinking indicator (shows processing status) */}
+                {isLoading && (
+                  <ThinkingIndicator 
+                    status={thinkingStatus} 
+                    isVisible={isLoading && !streamingContent} 
+                  />
+                )}
+
+                {/* Loading indicator (only when not streaming and no thinking status) */}
+                {isLoading && !streamingContent && !thinkingStatus && (
                   <div className="flex justify-start">
                     <div className="max-w-[80%] rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700">
                       <div className="flex space-x-2">
