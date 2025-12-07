@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // Check if user has __session cookie from Clerk (set by main app)
   const sessionCookie = request.cookies.get('__session')
 

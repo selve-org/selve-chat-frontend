@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { ChevronRight } from 'lucide-react'
 
 export interface ThinkingStatus {
   status: 'retrieving_context' | 'personalizing' | 'generating' | 'citing_sources' | 'complete' | 'error'
@@ -18,134 +19,58 @@ interface ThinkingIndicatorProps {
   isVisible: boolean
 }
 
-const STATUS_CONFIG = {
-  retrieving_context: {
-    icon: '🔍',
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-50 dark:bg-blue-950',
-    borderColor: 'border-blue-200 dark:border-blue-800',
-  },
-  personalizing: {
-    icon: '✨',
-    color: 'text-purple-500',
-    bgColor: 'bg-purple-50 dark:bg-purple-950',
-    borderColor: 'border-purple-200 dark:border-purple-800',
-  },
-  generating: {
-    icon: '🧠',
-    color: 'text-green-500',
-    bgColor: 'bg-green-50 dark:bg-green-950',
-    borderColor: 'border-green-200 dark:border-green-800',
-  },
-  citing_sources: {
-    icon: '📚',
-    color: 'text-amber-500',
-    bgColor: 'bg-amber-50 dark:bg-amber-950',
-    borderColor: 'border-amber-200 dark:border-amber-800',
-  },
-  complete: {
-    icon: '✅',
-    color: 'text-emerald-500',
-    bgColor: 'bg-emerald-50 dark:bg-emerald-950',
-    borderColor: 'border-emerald-200 dark:border-emerald-800',
-  },
-  error: {
-    icon: '❌',
-    color: 'text-red-500',
-    bgColor: 'bg-red-50 dark:bg-red-950',
-    borderColor: 'border-red-200 dark:border-red-800',
-  },
+const STATUS_LABELS: Record<string, string> = {
+  retrieving_context: 'Searching knowledge...',
+  personalizing: 'Personalizing response...',
+  generating: 'Thinking',
+  citing_sources: 'Adding sources...',
+  complete: 'Done',
+  error: 'Something went wrong',
 }
 
 export default function ThinkingIndicator({ status, isVisible }: ThinkingIndicatorProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
 
   if (!isVisible || !status) return null
 
-  const config = STATUS_CONFIG[status.status] || STATUS_CONFIG.generating
+  const label = STATUS_LABELS[status.status] || 'Thinking'
 
   return (
-    <div
-      className={`
-        mb-4 rounded-lg border px-4 py-3 transition-all duration-300
-        ${config.bgColor} ${config.borderColor}
-        ${isCollapsed ? 'cursor-pointer' : ''}
-      `}
-      onClick={() => isCollapsed && setIsCollapsed(false)}
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {/* Animated icon */}
-          <span className={`text-lg ${status.status === 'generating' ? 'animate-pulse' : ''}`}>
-            {config.icon}
-          </span>
-
-          {/* Status message */}
-          {!isCollapsed && (
-            <div className="flex flex-col">
-              <span className={`text-sm font-medium ${config.color}`}>
-                {status.message}
-              </span>
-
-              {/* Progress indicator */}
-              {status.details?.phase && status.details?.total_phases && (
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Step {status.details.phase} of {status.details.total_phases}
-                </span>
-              )}
-
-              {/* Model indicator */}
-              {status.status === 'generating' && status.details?.model && (
-                <span className="text-xs text-zinc-400 dark:text-zinc-500">
-                  Using {status.details.model}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Collapse/expand button */}
+    <div className="flex justify-start px-4 py-2">
+      <div className="flex flex-col gap-2">
+        {/* Main thinking indicator - simple clickable line */}
         <button
-          onClick={(e) => {
-            e.stopPropagation()
-            setIsCollapsed(!isCollapsed)
-          }}
-          className="rounded p-1 text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-600 dark:hover:bg-zinc-700 dark:hover:text-zinc-300"
-          aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="group flex items-center gap-1.5 text-sm text-zinc-400 transition-colors hover:text-zinc-300"
         >
-          <svg
-            className={`h-4 w-4 transition-transform duration-200 ${isCollapsed ? 'rotate-180' : ''}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-          </svg>
+          <span className="animate-pulse-fade">{label}</span>
+          <ChevronRight 
+            className={`h-3.5 w-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} 
+          />
         </button>
-      </div>
 
-      {/* Progress bar */}
-      {!isCollapsed && status.details?.phase && status.details?.total_phases && (
-        <div className="mt-2">
-          <div className="h-1 w-full rounded-full bg-zinc-200 dark:bg-zinc-700">
-            <div
-              className={`h-1 rounded-full transition-all duration-500 ${config.color.replace('text-', 'bg-')}`}
-              style={{ width: `${(status.details.phase / status.details.total_phases) * 100}%` }}
-            />
+        {/* Expanded details */}
+        {isExpanded && (
+          <div className="ml-0.5 border-l-2 border-zinc-700 pl-3 text-xs text-zinc-500 animate-fade-in">
+            <p>{status.message}</p>
+            {status.details?.phase && status.details?.total_phases && (
+              <p className="mt-1">
+                Step {status.details.phase} of {status.details.total_phases}
+              </p>
+            )}
+            {status.details?.model && (
+              <p className="mt-1 text-zinc-600">Using {status.details.model}</p>
+            )}
+            {status.details?.sources && status.details.sources.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {status.details.sources.map((source, idx) => (
+                  <p key={idx} className="text-zinc-600">📄 {source.title}</p>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
-      )}
-
-      {/* Sources list (when citing) */}
-      {!isCollapsed && status.status === 'citing_sources' && status.details?.sources && (
-        <div className="mt-2 space-y-1">
-          {status.details.sources.map((source, idx) => (
-            <div key={idx} className="text-xs text-zinc-500 dark:text-zinc-400">
-              📄 {source.title}
-            </div>
-          ))}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

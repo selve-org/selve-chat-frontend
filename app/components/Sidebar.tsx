@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { Search, ChevronDown, Plus, MessageSquare, Trash2 } from 'lucide-react'
+import { SelveLogo } from './SelveLogo'
 
 interface Session {
   id: string
@@ -84,19 +85,16 @@ export default function Sidebar({
       {/* Sidebar */}
       <aside
         className={`
-          fixed left-0 top-0 z-50 h-full w-64 transform bg-[#0a0a0a] transition-transform duration-300 ease-in-out
+          fixed left-0 top-0 z-50 h-full w-64 transform bg-[#111110] transition-transform duration-300 ease-in-out
           lg:relative lg:translate-x-0
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-          border-r border-zinc-800 flex flex-col
+          border-r border-[#1f1e1c] flex flex-col shadow-[8px_0_24px_-20px_rgba(0,0,0,0.75)]
         `}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-800 p-4">
+        <div className="flex items-center justify-between border-b border-[#1f1e1c] p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-emerald-600">
-              <span className="text-sm font-bold text-white">S</span>
-            </div>
-            <span className="font-semibold text-white">SELVE Chat</span>
+            <SelveLogo />
           </div>
           <button
             onClick={onToggle}
@@ -110,7 +108,7 @@ export default function Sidebar({
         <div className="p-3">
           <button
             onClick={onNewChat}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#2c261f] bg-[#1a1917] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:border-[#3a3127] hover:bg-[#22201d]"
           >
             <Plus className="h-4 w-4" />
             <span>New Chat</span>
@@ -126,7 +124,7 @@ export default function Sidebar({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search chats..."
-              className="w-full rounded-lg border border-zinc-800 bg-zinc-900 py-2 pl-9 pr-3 text-sm text-white placeholder-zinc-500 focus:border-zinc-600 focus:outline-none"
+              className="w-full rounded-lg border border-[#1f1e1c] bg-[#1a1917] py-2 pl-9 pr-3 text-sm text-white placeholder-zinc-500 focus:border-[#de6b35] focus:outline-none"
             />
           </div>
         </div>
@@ -153,8 +151,8 @@ export default function Sidebar({
                       className={`
                         group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors
                         ${activeSessionId === session.id
-                          ? 'bg-zinc-800 text-white'
-                          : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'}
+                          ? 'bg-[#1f1e1c] text-white ring-1 ring-[#2c2a28]'
+                          : 'text-zinc-400 hover:bg-[#1a1917] hover:text-white'}
                       `}
                     >
                       <span className="truncate">{session.title}</span>
@@ -164,7 +162,7 @@ export default function Sidebar({
                             e.stopPropagation()
                             onDeleteSession(session.id)
                           }}
-                          className="hidden rounded p-1 text-zinc-500 hover:bg-zinc-700 hover:text-red-400 group-hover:block"
+                          className="hidden rounded p-1 text-zinc-500 hover:bg-[#23201d] hover:text-red-400 group-hover:block"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -178,7 +176,7 @@ export default function Sidebar({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-zinc-800 p-4">
+        <div className="border-t border-[#1f1e1c] p-4">
           <div className="text-center text-xs text-zinc-600">
             Powered by SELVE AI
           </div>

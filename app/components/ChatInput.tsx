@@ -42,7 +42,7 @@ export default function ChatInput({
   }
 
   return (
-    <footer className="border-t border-zinc-200 bg-white px-4 py-4 dark:border-zinc-800 dark:bg-zinc-950">
+    <footer className="border-t border-[#1f1e1c] bg-[#0f0f0e] px-4 py-4">
       <div className="mx-auto max-w-3xl space-y-3">
         {/* Suggestion chips */}
         {suggestions.length > 0 && !value && (
@@ -51,7 +51,7 @@ export default function ChatInput({
               <button
                 key={idx}
                 onClick={() => onSuggestionClick?.(suggestion)}
-                className="rounded-full border border-zinc-300 bg-zinc-50 px-4 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                className="rounded-full border border-[#2c261f] bg-[#1a1917] px-4 py-2 text-sm text-zinc-200 transition-colors hover:border-[#3a3127] hover:bg-[#22201d]"
               >
                 {suggestion}
               </button>
@@ -61,11 +61,11 @@ export default function ChatInput({
 
         {/* Input area */}
         <form onSubmit={onSubmit} className="relative">
-          <div className="flex items-end gap-2 rounded-2xl border border-zinc-300 bg-zinc-50 p-2 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-900">
+          <div className="flex items-end gap-2 rounded-2xl border border-[#24221f] bg-[#1a1917] p-2 focus-within:border-[#9d7bff] focus-within:ring-2 focus-within:ring-[#9d7bff]/25">
             {/* Attachment button */}
             <button
               type="button"
-              className="shrink-0 rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+              className="shrink-0 rounded-lg p-2 text-zinc-500 transition-colors hover:bg-[#23211e] hover:text-zinc-200"
               aria-label="Attach file"
             >
               <Paperclip className="h-5 w-5" />
@@ -83,14 +83,14 @@ export default function ChatInput({
               placeholder={placeholder}
               disabled={isLoading}
               rows={1}
-              className="max-h-[200px] min-h-[44px] flex-1 resize-none bg-transparent py-3 text-sm text-zinc-900 placeholder-zinc-500 focus:outline-none disabled:text-zinc-400 dark:text-white dark:placeholder-zinc-400"
+              className="max-h-[200px] min-h-[44px] flex-1 resize-none bg-transparent py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none disabled:text-zinc-400"
             />
 
             {/* Submit button */}
             <button
               type="submit"
               disabled={!value.trim() || isLoading}
-              className="shrink-0 rounded-xl bg-zinc-900 p-2.5 text-white transition-colors hover:bg-zinc-800 disabled:bg-zinc-300 disabled:text-zinc-500 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200 dark:disabled:bg-zinc-700 dark:disabled:text-zinc-500"
+              className="shrink-0 rounded-xl bg-gradient-to-br from-[#b88dff] via-[#9d7bff] to-[#7f5af0] p-2.5 text-white transition-all hover:brightness-110 disabled:from-[#3f2f66] disabled:via-[#3f2f66] disabled:to-[#3f2f66] disabled:text-zinc-500"
               aria-label="Send message"
             >
               <ArrowUp className="h-5 w-5" />
@@ -100,11 +100,11 @@ export default function ChatInput({
 
         {/* Bottom actions */}
         <div className="flex items-center justify-between text-xs text-zinc-500">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 text-zinc-400">
             <Sparkles className="h-3.5 w-3.5" />
             <span>Powered by GPT-5</span>
           </div>
-          <span>Press Enter to send, Shift+Enter for new line</span>
+          <span className="text-zinc-500">Press Enter to send, Shift+Enter for new line</span>
         </div>
       </div>
     </footer>

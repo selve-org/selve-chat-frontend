@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 
 interface UseTypewriterOptions {
   /** Characters per second (default: 30) */
@@ -144,26 +144,29 @@ export function useStreamingTypewriter(
   const { baseSpeed = 60, naturalVariation = true } = options
   
   const [displayedContent, setDisplayedContent] = useState('')
-  const [targetIndex, setTargetIndex] = useState(0)
   const [isTyping, setIsTyping] = useState(false)
-
-  // Update target when new content arrives
+  
+  // Use a ref for streamed content to avoid resetting the typing timer
+  // when new chunks arrive
+  const contentRef = useRef(streamedContent)
+  
   useEffect(() => {
-    if (streamedContent.length > targetIndex) {
-      setTargetIndex(streamedContent.length)
-      setIsTyping(true)
-    }
-  }, [streamedContent, targetIndex])
+    contentRef.current = streamedContent
+  }, [streamedContent])
 
-  // Animate to target
+  // Main typing loop - depends only on displayedContent to maintain rhythm
   useEffect(() => {
-    if (displayedContent.length >= targetIndex) {
+    const target = contentRef.current
+    
+    if (displayedContent.length >= target.length) {
       setIsTyping(false)
       return
     }
 
+    setIsTyping(true)
+
     const variation = naturalVariation
-      ? 0.5 + Math.random() * 1.0 // 0.5x to 1.5x speed variation
+      ? 0.5 + Math.random() * 1.0 
       : 1
 
     const interval = (1000 / baseSpeed) * variation
@@ -172,21 +175,28 @@ export function useStreamingTypewriter(
       const currentLen = displayedContent.length
       // Catch up faster if we're behind
       const catchUpSpeed = Math.min(
-        3,
-        Math.ceil((streamedContent.length - currentLen) / 10)
+        5,
+        Math.ceil((contentRef.current.length - currentLen) / 10)
       )
-      const nextLen = Math.min(currentLen + catchUpSpeed, targetIndex)
-      setDisplayedContent(streamedContent.slice(0, nextLen))
+      const nextLen = Math.min(currentLen + catchUpSpeed, contentRef.current.length)
+      setDisplayedContent(contentRef.current.slice(0, nextLen))
     }, interval)
 
     return () => clearTimeout(timeout)
-  }, [displayedContent, targetIndex, streamedContent, baseSpeed, naturalVariation])
+  }, [displayedContent, baseSpeed, naturalVariation])
+
+  // Kickstart the loop when new content arrives if we're not currently typing
+  useEffect(() => {
+    if (streamedContent.length > displayedContent.length && !isTyping) {
+      // Trigger the first update immediately to start the loop
+      setDisplayedContent(prev => contentRef.current.slice(0, prev.length + 1))
+    }
+  }, [streamedContent, displayedContent.length, isTyping])
 
   // Reset when stream clears
   useEffect(() => {
     if (streamedContent === '' && displayedContent !== '') {
       setDisplayedContent('')
-      setTargetIndex(0)
       setIsTyping(false)
     }
   }, [streamedContent, displayedContent])

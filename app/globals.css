@@ -1,8 +1,15 @@
 @import "tailwindcss";
 
+/* Core dark palette inspired by the Figma capture */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0f0f0e;
+  --foreground: #f7f5ef;
+  --sidebar-bg: #111110;
+  --panel: #1a1917;
+  --card-border: #22211f;
+  --text-muted: #8b8a86;
+  --accent: #de6b35;
+  --accent-soft: #2c261f;
 }
 
 @theme inline {
@@ -12,15 +19,85 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2e2c29;
+  border-radius: 3;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3834;
+}
+
+/* Prose styling for markdown content */
+.prose-dark {
+  color: #e5e7eb;
+}
+
+.prose-dark h1,
+.prose-dark h2,
+.prose-dark h3,
+.prose-dark h4 {
+  color: #ffffff;
+}
+
+.prose-dark a {
+  color: #60a5fa;
+}
+
+.prose-dark code {
+  background: #1f2937;
+  color: #f3f4f6;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+}
+
+.prose-dark pre {
+  background: #111827;
+  border: 1px solid #1f2937;
+}
+
+/* Thinking indicator pulse-fade animation (like ChatGPT) */
+@keyframes pulse-fade {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.animate-pulse-fade {
+  animation: pulse-fade 1.5s ease-in-out infinite;
+}
+
+/* Fade in animation */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
 }
