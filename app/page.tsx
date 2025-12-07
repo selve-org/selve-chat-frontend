@@ -73,7 +73,9 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-screen bg-[radial-gradient(circle_at_20%_0%,rgba(222,107,53,0.12),transparent_28%),radial-gradient(circle_at_80%_10%,rgba(255,255,255,0.04),transparent_30%),#0f0f0e] text-white">
+    <div
+      className={`flex h-screen bg-[radial-gradient(circle_at_20%_0%,rgba(222,107,53,0.12),transparent_28%),radial-gradient(circle_at_80%_10%,rgba(255,255,255,0.04),transparent_30%),#0f0f0e] text-white transition-all duration-300 ease-out ${isSidebarOpen ? 'lg:pl-64' : 'lg:pl-0'}`}
+    >
       {/* Error toast */}
       {error && (
         <ErrorToast message={error} onDismiss={clearError} />
@@ -102,7 +104,7 @@ export default function ChatPage() {
         <div className="flex flex-1 flex-col overflow-hidden">
           {hasMessages ? (
             <div className="flex-1 overflow-y-auto">
-              <div className="mx-auto max-w-3xl">
+              <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-10">
                 <ChatMessages
                   messages={messages}
                   streamingContent={streamingContent}

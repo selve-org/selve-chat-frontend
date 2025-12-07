@@ -43,7 +43,7 @@ export default function ChatInput({
 
   return (
     <footer className="border-t border-[#1f1e1c] bg-[#0f0f0e] px-4 py-4">
-      <div className="mx-auto max-w-3xl space-y-3">
+      <div className="mx-auto w-full max-w-5xl space-y-3 px-1 sm:px-4 lg:px-6">
         {/* Suggestion chips */}
         {suggestions.length > 0 && !value && (
           <div className="flex flex-wrap gap-2">

@@ -41,7 +41,7 @@ export default function TopBar({
         >
           <Menu className="h-5 w-5" />
         </button>
-        <h1 className="ml-1 text-lg font-semibold text-white">
+        <h1 className="ml-14 text-lg font-semibold text-white">
           {title}
         </h1>
       </div>

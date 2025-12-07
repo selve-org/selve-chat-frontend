@@ -33,7 +33,7 @@ export default function Sidebar({
   onToggle,
 }: SidebarProps) {
   const [searchQuery, setSearchQuery] = React.useState('')
-  const homeUrl = process.env.NEXT_PUBLIC_MAIN_APP_URL || '/'
+  const homeUrl = process.env.NEXT_PUBLIC_CHATBOT_URL || '/'
 
   const sidebarVariants = {
     open: {
