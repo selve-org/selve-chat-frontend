@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { motion } from 'framer-motion'
 import { Search, Plus, MessageSquare, Trash2 } from 'lucide-react'
 import { SelveLogo } from './SelveLogo'
 import { AnimatedHamburgerIcon } from './AnimatedHamburgerIcon'
@@ -32,7 +33,20 @@ export default function Sidebar({
   onToggle,
 }: SidebarProps) {
   const [searchQuery, setSearchQuery] = React.useState('')
-  const homeUrl = process.env.NEXT_PUBLIC_CHATBOT_UR || '/'
+  const homeUrl = process.env.NEXT_PUBLIC_MAIN_APP_URL || '/'
+
+  const sidebarVariants = {
+    open: {
+      x: 0,
+      boxShadow: '8px 0 24px -20px rgba(0,0,0,0.75)',
+      transition: { duration: 0.25, ease: 'easeOut' },
+    },
+    closed: {
+      x: '-100%',
+      boxShadow: '0 0 0 0 rgba(0,0,0,0)',
+      transition: { duration: 0.25, ease: 'easeIn' },
+    },
+  }
 
   const filteredSessions = sessions.filter(session =>
     session.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -85,32 +99,28 @@ export default function Sidebar({
       )}
 
       {/* Sidebar */}
-      <aside
-        className={`
-          fixed left-0 top-0 z-50 h-full w-64 transform bg-[#111110] transition-transform duration-300 ease-in-out
-          lg:relative lg:translate-x-0
-          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-          border-r border-[#1f1e1c] flex flex-col shadow-[8px_0_24px_-20px_rgba(0,0,0,0.75)]
-        `}
+      <motion.aside
+        initial={false}
+        animate={isOpen ? 'open' : 'closed'}
+        variants={sidebarVariants}
+        className="fixed left-0 top-0 z-50 flex h-full w-64 flex-col border-r border-[#1f1e1c] bg-[#111110]"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#1f1e1c] p-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onToggle}
-              className="flex items-center justify-center rounded-lg p-2 text-white transition-colors hover:bg-[#1a1917]"
-              aria-label="Toggle sidebar"
-            >
-              <AnimatedHamburgerIcon isOpen={isOpen} />
-            </button>
-            <a
-              href={homeUrl}
-              className="rounded-lg p-1 transition-colors hover:bg-[#1a1917]"
-              aria-label="SELVE logo"
-            >
-              <SelveLogo />
-            </a>
-          </div>
+        <div className="flex items-center gap-3 border-b border-[#1f1e1c] px-4 py-3">
+          <a
+            href={homeUrl}
+            className="rounded-lg p-1 transition-colors hover:bg-[#1a1917]"
+            aria-label="SELVE homepage"
+          >
+            <SelveLogo />
+          </a>
+          <button
+            onClick={onToggle}
+            className="ml-auto flex items-center justify-center rounded-lg p-2 text-white transition-colors hover:bg-[#1a1917]"
+            aria-label="Toggle sidebar"
+          >
+            <AnimatedHamburgerIcon isOpen={isOpen} />
+          </button>
         </div>
 
         {/* New Chat Button */}
@@ -190,7 +200,20 @@ export default function Sidebar({
             Powered by SELVE AI
           </div>
         </div>
-      </aside>
+      </motion.aside>
+
+      <motion.button
+        key="sidebar-toggle"
+        initial={false}
+        animate={{ x: 0, opacity: isOpen ? 0 : 1, scale: isOpen ? 0.96 : 1 }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
+        onClick={onToggle}
+        className="fixed left-3 top-4 z-[60] flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-[#141312] text-white shadow-lg shadow-black/40 backdrop-blur hover:border-[#de6b35] hover:bg-[#1a1917]"
+        aria-label={isOpen ? 'Close sidebar' : 'Open sidebar'}
+        style={{ pointerEvents: isOpen ? 'none' : 'auto' }}
+      >
+        <AnimatedHamburgerIcon isOpen={isOpen} />
+      </motion.button>
     </>
   )
 }

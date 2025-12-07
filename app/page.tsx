@@ -21,7 +21,7 @@ import { useChat } from './hooks/useChat'
  */
 export default function ChatPage() {
   const { user, isLoaded: isUserLoaded } = useUser()
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const {
