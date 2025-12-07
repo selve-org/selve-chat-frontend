@@ -1,8 +1,9 @@
 'use client'
 
 import * as React from 'react'
-import { Search, ChevronDown, Plus, MessageSquare, Trash2 } from 'lucide-react'
+import { Search, Plus, MessageSquare, Trash2 } from 'lucide-react'
 import { SelveLogo } from './SelveLogo'
+import { AnimatedHamburgerIcon } from './AnimatedHamburgerIcon'
 
 interface Session {
   id: string
@@ -31,6 +32,7 @@ export default function Sidebar({
   onToggle,
 }: SidebarProps) {
   const [searchQuery, setSearchQuery] = React.useState('')
+  const homeUrl = process.env.NEXT_PUBLIC_CHATBOT_UR || '/'
 
   const filteredSessions = sessions.filter(session =>
     session.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -94,14 +96,21 @@ export default function Sidebar({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#1f1e1c] p-4">
           <div className="flex items-center gap-3">
-            <SelveLogo />
+            <button
+              onClick={onToggle}
+              className="flex items-center justify-center rounded-lg p-2 text-white transition-colors hover:bg-[#1a1917]"
+              aria-label="Toggle sidebar"
+            >
+              <AnimatedHamburgerIcon isOpen={isOpen} />
+            </button>
+            <a
+              href={homeUrl}
+              className="rounded-lg p-1 transition-colors hover:bg-[#1a1917]"
+              aria-label="SELVE logo"
+            >
+              <SelveLogo />
+            </a>
           </div>
-          <button
-            onClick={onToggle}
-            className="rounded p-1 text-zinc-400 hover:bg-zinc-800 hover:text-white lg:hidden"
-          >
-            <ChevronDown className="h-4 w-4 rotate-90" />
-          </button>
         </div>
 
         {/* New Chat Button */}
