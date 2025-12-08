@@ -21,6 +21,8 @@ interface SidebarProps {
   onDeleteSession?: (sessionId: string) => void
   isOpen: boolean
   onToggle: () => void
+  userName?: string
+  userPlan?: string
 }
 
 export default function Sidebar({
@@ -31,6 +33,8 @@ export default function Sidebar({
   onDeleteSession,
   isOpen,
   onToggle,
+  userName,
+  userPlan,
 }: SidebarProps) {
   const [searchQuery, setSearchQuery] = React.useState('')
   const homeUrl = process.env.NEXT_PUBLIC_CHATBOT_URL || '/'
@@ -196,8 +200,14 @@ export default function Sidebar({
 
         {/* Footer */}
         <div className="border-t border-[#1f1e1c] p-4">
-          <div className="text-center text-xs text-zinc-600">
-            Powered by SELVE AI
+          <div className="flex items-center gap-3 rounded-lg bg-[#151412] px-3 py-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#b88dff] via-[#7f5af0] to-[#5f3bd8] text-sm font-semibold text-white">
+              {userName?.slice(0, 2).toUpperCase() || 'SE'}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-white line-clamp-1">{userName || 'SELVE User'}</span>
+              <span className="text-xs text-zinc-500 line-clamp-1">{userPlan || 'Pro plan'}</span>
+            </div>
           </div>
         </div>
       </motion.aside>

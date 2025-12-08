@@ -11,9 +11,6 @@ interface MarkdownRendererProps {
 
 export default function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
   const renderMarkdown = (text: string) => {
-    const elements: React.ReactNode[] = []
-    let currentIndex = 0
-
     // Parse code blocks first
     const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g
     let match

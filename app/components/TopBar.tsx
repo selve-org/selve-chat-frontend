@@ -1,7 +1,7 @@
 'use client'
 
 import { Menu, Bell, Share2, Download, Sun, Moon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 interface TopBarProps {
   onMenuClick: () => void
@@ -16,13 +16,10 @@ export default function TopBar({
   onShare,
   title = 'SELVE Chat',
 }: TopBarProps) {
-  const [isDark, setIsDark] = useState(true)
-
-  useEffect(() => {
-    // Check initial theme
-    const isDarkMode = document.documentElement.classList.contains('dark')
-    setIsDark(isDarkMode)
-  }, [])
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof document === 'undefined') return true
+    return document.documentElement.classList.contains('dark')
+  })
 
   const toggleTheme = () => {
     const newIsDark = !isDark

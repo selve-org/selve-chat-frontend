@@ -35,6 +35,7 @@ export default function ChatPage() {
     sessions,
     error,
     userProfile,
+    userAccount,
     messageCitations,
     thinkingStatus,
     hasMessages,
@@ -43,6 +44,7 @@ export default function ChatPage() {
     createNewConversation,
     deleteSession,
     clearError,
+    isLoadingAccount,
   } = useChat({
     userId: user?.id,
     userName: user?.firstName || user?.username,
@@ -68,7 +70,7 @@ export default function ChatPage() {
   }
 
   // Loading state
-  if (!isUserLoaded || isLoadingSession) {
+  if (!isUserLoaded || isLoadingSession || isLoadingAccount) {
     return <LoadingScreen />
   }
 
@@ -90,6 +92,8 @@ export default function ChatPage() {
         onDeleteSession={deleteSession}
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+        userName={userAccount?.user_name || user?.fullName || user?.firstName || user?.username || undefined}
+        userPlan={userAccount?.subscription_plan || userProfile?.subscriptionPlan || 'Pro plan'}
       />
 
       {/* Main content area */}

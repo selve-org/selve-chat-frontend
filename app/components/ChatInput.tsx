@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowUp, Sparkles, Paperclip } from 'lucide-react'
+import { ArrowUp, Paperclip } from 'lucide-react'
 import { FormEvent, KeyboardEvent, useRef } from 'react'
 
 interface ChatInputProps {

@@ -32,6 +32,16 @@ export interface UserProfile {
   scores?: SelveScores
   archetype?: string
   profile_pattern?: string
+  subscriptionPlan?: string
+}
+
+export interface UserAccount {
+  user_id?: string
+  clerk_user_id?: string
+  user_name?: string
+  email?: string
+  has_assessment?: boolean
+  subscription_plan?: string
 }
 
 export interface MessageCitations {
@@ -55,8 +65,10 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
   const [sessions, setSessions] = useState<Session[]>([])
   const [error, setError] = useState<string | null>(null)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [userAccount, setUserAccount] = useState<UserAccount | null>(null)
   const [messageCitations, setMessageCitations] = useState<MessageCitations>({})
   const [isLoadingProfile, setIsLoadingProfile] = useState(false)
+  const [isLoadingAccount, setIsLoadingAccount] = useState(false)
   const [thinkingStatus, setThinkingStatus] = useState<ThinkingStatus | null>(null)
   const [compressionNeeded, setCompressionNeeded] = useState(false)
   const [totalTokens, setTotalTokens] = useState<number | null>(null)
@@ -72,6 +84,21 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
       console.error('Error loading user profile:', err)
     } finally {
       setIsLoadingProfile(false)
+    }
+  }, [userId])
+
+  const loadUserAccount = useCallback(async () => {
+    if (!userId) return
+    try {
+      setIsLoadingAccount(true)
+      const response = await fetch(`${API_URL}/api/users/${userId}`)
+      if (!response.ok) return
+      const account = await response.json()
+      setUserAccount(account)
+    } catch (err) {
+      console.error('Error loading user account:', err)
+    } finally {
+      setIsLoadingAccount(false)
     }
   }, [userId])
 
@@ -359,8 +386,9 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     if (userId) {
       loadUserSessions()
       loadUserProfile()
+      loadUserAccount()
     }
-  }, [userId, loadUserSessions, loadUserProfile])
+  }, [userId, loadUserSessions, loadUserProfile, loadUserAccount])
 
   return {
     // State
@@ -374,7 +402,9 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     sessions,
     error,
     userProfile,
+    userAccount,
     isLoadingProfile,
+    isLoadingAccount,
     messageCitations,
     thinkingStatus,
     compressionNeeded,

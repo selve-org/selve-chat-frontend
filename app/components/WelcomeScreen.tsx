@@ -1,6 +1,6 @@
 'use client'
 
-import { Sparkles, MessageSquare, Brain, Palette, Code } from 'lucide-react'
+import { Sparkles, MessageSquare, Brain, Palette } from 'lucide-react'
 
 interface FeatureCardProps {
   title: string
