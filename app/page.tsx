@@ -22,7 +22,18 @@ import { useChat } from './hooks/useChat'
 export default function ChatPage() {
   const { user, isLoaded: isUserLoaded } = useUser()
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [showSignInPrompt, setShowSignInPrompt] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const SIGNIN_DISMISSED_KEY = 'selve_signin_prompt_dismissed'
+
+  const mainAppBase =
+    process.env.NEXT_PUBLIC_MAIN_APP_URL ||
+    process.env.MAIN_APP_URL ||
+    process.env.MAIN_APP_URL_DEV ||
+    process.env.MAIN_APP_URL_PROD ||
+    (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
+
+  const signInUrl = `${mainAppBase.replace(/\/$/, '')}/sign-in`
 
   const {
     messages,
@@ -55,6 +66,21 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, streamingContent])
 
+  useEffect(() => {
+    if (!isUserLoaded) return
+    const dismissed = typeof window !== 'undefined' ? localStorage.getItem(SIGNIN_DISMISSED_KEY) : null
+    if (!user && !dismissed) {
+      setShowSignInPrompt(true)
+    }
+  }, [user, isUserLoaded])
+
+  const dismissSignInPrompt = () => {
+    setShowSignInPrompt(false)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(SIGNIN_DISMISSED_KEY, '1')
+    }
+  }
+
   const handleSuggestionClick = (suggestion: string) => {
     setInput(suggestion)
   }
@@ -83,6 +109,32 @@ export default function ChatPage() {
         <ErrorToast message={error} onDismiss={clearError} />
       )}
 
+      {/* Sign-in prompt for guests */}
+      {showSignInPrompt && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 px-4">
+          <div className="w-full max-w-md rounded-2xl border border-[#2c261f] bg-[#141312] p-6 shadow-2xl shadow-black/40">
+            <div className="mb-4 text-lg font-semibold">Sign in for personalized SELVE chat</div>
+            <p className="mb-6 text-sm text-zinc-300">
+              Sign in to sync your assessment scores, save conversations, and get tailored insights. You can continue as a guest if you prefer.
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                onClick={dismissSignInPrompt}
+                className="rounded-lg border border-[#2c261f] px-4 py-2 text-sm font-medium text-white transition hover:border-[#3a3127] hover:bg-[#1a1917]"
+              >
+                Continue as guest
+              </button>
+              <a
+                href={signInUrl}
+                className="rounded-lg border border-transparent bg-[#de6b35] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#f07c45]"
+              >
+                Sign in
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar */}
       <Sidebar
         sessions={sessions}
@@ -93,7 +145,9 @@ export default function ChatPage() {
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         userName={userAccount?.user_name || user?.fullName || user?.firstName || user?.username || undefined}
-        userPlan={userAccount?.subscription_plan || userProfile?.subscriptionPlan || 'Pro plan'}
+        userPlan={userAccount?.subscription_plan || userProfile?.subscriptionPlan}
+        isSignedIn={!!user}
+        signInUrl={signInUrl}
       />
 
       {/* Main content area */}

@@ -466,6 +466,17 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
       const trimmedMessage = userMessage.trim()
       if (!trimmedMessage || !sessionId) return
 
+      const selveScores = userProfile?.scores || null
+      const assessmentBase =
+        process.env.NEXT_PUBLIC_ASSESSMENT_URL ||
+        process.env.NEXT_PUBLIC_MAIN_APP_URL ||
+        process.env.MAIN_APP_URL ||
+        process.env.MAIN_APP_URL_PROD ||
+        process.env.MAIN_APP_URL_DEV ||
+        (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
+
+      const assessmentUrl = `${assessmentBase.replace(/\/$/, '')}/assessment`
+
       // Cancel any existing stream
       abortControllerRef.current?.abort()
       abortControllerRef.current = new AbortController()
@@ -512,6 +523,8 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
             session_id: sessionId,
             clerk_user_id: userId || null,
             user_name: userName || null,
+            selve_scores: selveScores,
+            assessment_url: assessmentUrl,
             stream: true,
           }),
           signal: abortControllerRef.current.signal,
@@ -652,6 +665,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
       sessionId,
       userId,
       userName,
+      userProfile,
       messages.length,
       generateTitleForSession,
       loadUserSessions,

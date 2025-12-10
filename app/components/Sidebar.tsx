@@ -23,6 +23,8 @@ interface SidebarProps {
   onToggle: () => void
   userName?: string
   userPlan?: string
+  isSignedIn?: boolean
+  signInUrl?: string
 }
 
 export default function Sidebar({
@@ -35,6 +37,8 @@ export default function Sidebar({
   onToggle,
   userName,
   userPlan,
+  isSignedIn = false,
+  signInUrl,
 }: SidebarProps) {
   const [searchQuery, setSearchQuery] = React.useState('')
   const homeUrl = process.env.NEXT_PUBLIC_CHATBOT_URL || '/'
@@ -169,15 +173,16 @@ export default function Sidebar({
                 <div className="space-y-1">
                   {group.sessions.map((session) => {
                     const isTitleLoading = ['Generating title...', '...'].includes(session.title)
+                    const isActive = activeSessionId === session.id
                     return (
                       <div
                         key={session.id}
                         onClick={() => onSessionSelect(session.id)}
                         className={`
-                          group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors
-                          ${activeSessionId === session.id
-                            ? 'bg-[#1f1e1c] text-white ring-1 ring-[#2c2a28]'
-                            : 'text-zinc-400 hover:bg-[#1a1917] hover:text-white'}
+                          group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors border
+                          ${isActive
+                            ? 'bg-[#1f1e1c] text-white ring-1 ring-[#de6b35]/50 border-[#de6b35]/40 shadow-[inset_2px_0_0_0_#de6b35]' 
+                            : 'border-transparent text-zinc-400 hover:bg-[#1a1917] hover:text-white'}
                         `}
                       >
                         {isTitleLoading ? (
@@ -186,7 +191,7 @@ export default function Sidebar({
                             <span className="absolute right-2 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-white/50 animate-ping" />
                           </span>
                         ) : (
-                          <span className="truncate">{session.title}</span>
+                          <span className={`truncate ${isActive ? 'font-semibold' : ''}`}>{session.title}</span>
                         )}
                         {onDeleteSession && (
                           <button
@@ -194,7 +199,7 @@ export default function Sidebar({
                               e.stopPropagation()
                               onDeleteSession(session.id)
                             }}
-                            className="hidden rounded p-1 text-zinc-500 hover:bg-[#23201d] hover:text-red-400 group-hover:block"
+                            className="opacity-0 rounded p-1 text-zinc-500 transition hover:bg-[#23201d] hover:text-red-400 group-hover:opacity-100"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
@@ -210,14 +215,24 @@ export default function Sidebar({
 
         {/* Footer */}
         <div className="border-t border-[#1f1e1c] p-4">
-          <div className="flex items-center gap-3 rounded-lg bg-[#151412] px-3 py-2">
+          <div className="flex items-center gap-3 rounded-lg bg-[#151412] px-3 py-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#b88dff] via-[#7f5af0] to-[#5f3bd8] text-sm font-semibold text-white">
-              {userName?.slice(0, 2).toUpperCase() || 'SE'}
+              {(userName?.slice(0, 2) || (isSignedIn ? 'SE' : 'GU')).toUpperCase()}
             </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-white line-clamp-1">{userName || 'SELVE User'}</span>
-              <span className="text-xs text-zinc-500 line-clamp-1">{userPlan || 'Pro plan'}</span>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold text-white truncate">{userName || (isSignedIn ? 'SELVE User' : 'Guest')}</div>
+              <div className="text-xs text-zinc-500 truncate">
+                {isSignedIn ? (userPlan || 'Pro plan') : 'Sign in for full access'}
+              </div>
             </div>
+            {!isSignedIn && signInUrl && (
+              <a
+                href={signInUrl}
+                className="shrink-0 rounded-md border border-[#2c261f] px-3 py-2 text-[11px] font-semibold text-white transition hover:border-[#de6b35] hover:bg-[#1f1a15]"
+              >
+                Sign in
+              </a>
+            )}
           </div>
         </div>
       </motion.aside>
