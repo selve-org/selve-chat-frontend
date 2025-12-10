@@ -167,31 +167,41 @@ export default function Sidebar({
                   {group.label}
                 </div>
                 <div className="space-y-1">
-                  {group.sessions.map((session) => (
-                    <div
-                      key={session.id}
-                      onClick={() => onSessionSelect(session.id)}
-                      className={`
-                        group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors
-                        ${activeSessionId === session.id
-                          ? 'bg-[#1f1e1c] text-white ring-1 ring-[#2c2a28]'
-                          : 'text-zinc-400 hover:bg-[#1a1917] hover:text-white'}
-                      `}
-                    >
-                      <span className="truncate">{session.title}</span>
-                      {onDeleteSession && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onDeleteSession(session.id)
-                          }}
-                          className="hidden rounded p-1 text-zinc-500 hover:bg-[#23201d] hover:text-red-400 group-hover:block"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                  {group.sessions.map((session) => {
+                    const isTitleLoading = ['Generating title...', '...'].includes(session.title)
+                    return (
+                      <div
+                        key={session.id}
+                        onClick={() => onSessionSelect(session.id)}
+                        className={`
+                          group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors
+                          ${activeSessionId === session.id
+                            ? 'bg-[#1f1e1c] text-white ring-1 ring-[#2c2a28]'
+                            : 'text-zinc-400 hover:bg-[#1a1917] hover:text-white'}
+                        `}
+                      >
+                        {isTitleLoading ? (
+                          <span className="relative block h-4 w-28 overflow-hidden rounded bg-gradient-to-r from-[#25221f] via-[#302b26] to-[#25221f] text-transparent">
+                            <span className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/12 to-transparent" />
+                            <span className="absolute right-2 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-white/50 animate-ping" />
+                          </span>
+                        ) : (
+                          <span className="truncate">{session.title}</span>
+                        )}
+                        {onDeleteSession && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onDeleteSession(session.id)
+                            }}
+                            className="hidden rounded p-1 text-zinc-500 hover:bg-[#23201d] hover:text-red-400 group-hover:block"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             ))
