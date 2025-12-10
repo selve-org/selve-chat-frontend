@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { ThinkingStatus } from '../components/ThinkingIndicator'
 import { Citation } from '../components/SourceCitations'
 
@@ -54,6 +54,27 @@ interface UseChatOptions {
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'
+const DEFAULT_TIMEOUT = 10000
+const TITLE_POLL_ATTEMPTS = 5
+const TITLE_POLL_DELAY = 600
+const PLACEHOLDER_TITLES = new Set(['New Conversation', 'Generating title...', '...'])
+
+// Type guard for session validation
+function isValidSession(data: unknown): data is Session {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    typeof (data as Session).id === 'string' &&
+    (data as Session).id.length > 0
+  )
+}
+
+// Type guard for session with messages
+function isValidSessionWithMessages(
+  data: unknown
+): data is Session & { messages?: Message[] } {
+  return isValidSession(data)
+}
 
 export function useChat({ userId, userName }: UseChatOptions = {}) {
   const [messages, setMessages] = useState<Message[]>([])
@@ -73,131 +94,216 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
   const [compressionNeeded, setCompressionNeeded] = useState(false)
   const [totalTokens, setTotalTokens] = useState<number | null>(null)
 
-  const getEffectiveUserId = useCallback(() => {
-    if (userId) return userId
+  // Refs for cleanup and stable references
+  const abortControllerRef = useRef<AbortController | null>(null)
+  const mountedRef = useRef(true)
+  const effectiveUserIdRef = useRef<string | null>(null)
+
+  // Memoized effective user ID - computed once and cached
+  const getEffectiveUserId = useCallback((): string | null => {
+    if (userId) {
+      effectiveUserIdRef.current = userId
+      return userId
+    }
+
+    if (effectiveUserIdRef.current) {
+      return effectiveUserIdRef.current
+    }
+
     if (typeof window === 'undefined') return null
 
     const storageKey = 'selve_chat_anon_id'
     let stored = localStorage.getItem(storageKey)
     if (!stored) {
-      const generated = typeof crypto !== 'undefined' && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `anon_${Date.now()}`
+      const generated =
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `anon_${Date.now()}_${Math.random().toString(36).slice(2)}`
       stored = `anon_${generated}`
       localStorage.setItem(storageKey, stored)
     }
+    effectiveUserIdRef.current = stored
     return stored
   }, [userId])
 
-  const ensureSessionInList = useCallback((session: Session) => {
-    setSessions((prev) => {
-      const exists = prev.some((s) => s.id === session.id)
-      if (exists) return prev.map((s) => (s.id === session.id ? { ...s, ...session } : s))
-      return [session, ...prev]
-    })
-  }, [])
+  // Safe fetch wrapper with timeout and abort handling
+  const safeFetch = useCallback(
+    async <T>(
+      url: string,
+      options: RequestInit = {},
+      timeout = DEFAULT_TIMEOUT
+    ): Promise<{ data: T | null; error: string | null }> => {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), timeout)
 
-  const updateSessionTitleLocally = useCallback(
-    (sessionIdToUpdate: string, title: string) => {
-      setSessions((prev) =>
-        prev.map((session) =>
-          session.id === sessionIdToUpdate ? { ...session, title } : session
-        )
-      )
+      try {
+        const response = await fetch(url, {
+          ...options,
+          signal: controller.signal,
+        })
+        clearTimeout(timeoutId)
+
+        if (!response.ok) {
+          return { data: null, error: `HTTP ${response.status}: ${response.statusText}` }
+        }
+
+        const data = await response.json()
+        return { data, error: null }
+      } catch (err) {
+        clearTimeout(timeoutId)
+        if (err instanceof Error) {
+          if (err.name === 'AbortError') {
+            return { data: null, error: 'Request timed out' }
+          }
+          return { data: null, error: err.message }
+        }
+        return { data: null, error: 'Unknown error occurred' }
+      }
     },
     []
   )
 
+  const ensureSessionInList = useCallback((session: Session) => {
+    setSessions((prev) => {
+      const existingIndex = prev.findIndex((s) => s.id === session.id)
+      if (existingIndex >= 0) {
+        const updated = [...prev]
+        updated[existingIndex] = { ...updated[existingIndex], ...session }
+        return updated
+      }
+      return [session, ...prev]
+    })
+  }, [])
+
+  const updateSessionTitleLocally = useCallback((sessionIdToUpdate: string, title: string) => {
+    setSessions((prev) =>
+      prev.map((session) =>
+        session.id === sessionIdToUpdate ? { ...session, title } : session
+      )
+    )
+  }, [])
+
   const loadUserProfile = useCallback(async () => {
     const effectiveUserId = getEffectiveUserId()
-    if (!effectiveUserId) return
+    if (!effectiveUserId || !mountedRef.current) return
+
+    setIsLoadingProfile(true)
     try {
-      setIsLoadingProfile(true)
-      const response = await fetch(`${API_URL}/api/users/${effectiveUserId}/scores`)
-      const profile = await response.json()
-      setUserProfile(profile)
-    } catch (err) {
-      console.error('Error loading user profile:', err)
+      const { data } = await safeFetch<UserProfile>(
+        `${API_URL}/api/users/${effectiveUserId}/scores`
+      )
+      if (mountedRef.current && data) {
+        setUserProfile(data)
+      }
     } finally {
-      setIsLoadingProfile(false)
+      if (mountedRef.current) {
+        setIsLoadingProfile(false)
+      }
     }
-  }, [getEffectiveUserId])
+  }, [getEffectiveUserId, safeFetch])
 
   const loadUserAccount = useCallback(async () => {
     const effectiveUserId = getEffectiveUserId()
-    if (!effectiveUserId) return
-    try {
-      setIsLoadingAccount(true)
-      const response = await fetch(`${API_URL}/api/users/${effectiveUserId}`)
-      if (!response.ok) return
-      const account = await response.json()
-      setUserAccount(account)
-    } catch (err) {
-      console.error('Error loading user account:', err)
-    } finally {
-      setIsLoadingAccount(false)
-    }
-  }, [getEffectiveUserId])
+    if (!effectiveUserId || !mountedRef.current) return
 
-  const loadUserSessions = useCallback(async () => {
+    setIsLoadingAccount(true)
+    try {
+      const { data } = await safeFetch<UserAccount>(
+        `${API_URL}/api/users/${effectiveUserId}`
+      )
+      if (mountedRef.current && data) {
+        setUserAccount(data)
+      }
+    } finally {
+      if (mountedRef.current) {
+        setIsLoadingAccount(false)
+      }
+    }
+  }, [getEffectiveUserId, safeFetch])
+
+  const loadUserSessions = useCallback(async (): Promise<Session[]> => {
     const effectiveUserId = getEffectiveUserId()
     if (!effectiveUserId) return []
+
     try {
-      const response = await fetch(`${API_URL}/api/sessions/user/${effectiveUserId}`)
-      const userSessions = await response.json()
-      const sessionsArray = Array.isArray(userSessions)
-        ? userSessions
-        : Array.isArray(userSessions?.sessions)
-          ? userSessions.sessions
+      const { data, error: fetchError } = await safeFetch<
+        Session[] | { sessions: Session[] }
+      >(`${API_URL}/api/sessions/user/${effectiveUserId}`)
+
+      if (fetchError || !data) {
+        console.error('Error loading sessions:', fetchError)
+        return []
+      }
+
+      const sessionsArray = Array.isArray(data)
+        ? data
+        : Array.isArray(data.sessions)
+          ? data.sessions
           : []
 
-      const sorted = [...sessionsArray].sort(
-        (a: Session, b: Session) =>
-          new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
+      const validSessions = sessionsArray.filter(isValidSession)
+      const sorted = validSessions.sort(
+        (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
       )
 
-      setSessions(sorted)
+      if (mountedRef.current) {
+        setSessions(sorted)
+      }
       return sorted
     } catch (err) {
       console.error('Error loading sessions:', err)
       return []
     }
-  }, [getEffectiveUserId])
+  }, [getEffectiveUserId, safeFetch])
 
-  const generateTitleForSession = useCallback(
-    async (sessionIdToUpdate: string, userMessage: string, assistantMessage: string) => {
-      try {
-        const res = await fetch(`${API_URL}/api/sessions/${sessionIdToUpdate}/generate-title`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: userMessage,
-            assistant_response: assistantMessage,
-          }),
-        })
+  const restoreSession = useCallback(
+    async (
+      sessionIdToRestore: string
+    ): Promise<(Session & { messages?: Message[] }) | null> => {
+      const { data, error: fetchError } = await safeFetch<Session & { messages?: Message[] }>(
+        `${API_URL}/api/sessions/${sessionIdToRestore}`
+      )
 
-        const data = await res.json().catch(() => null)
-        const newTitle = data?.title || data?.session?.title
-        if (newTitle) {
-          updateSessionTitleLocally(sessionIdToUpdate, newTitle)
-        }
-      } catch (err) {
-        console.error('Failed to generate title:', err)
-      } finally {
-        await loadUserSessions()
+      if (fetchError) {
+        console.error('[useChat] Error restoring session:', fetchError)
+        return null
       }
+
+      return isValidSessionWithMessages(data) ? data : null
     },
-    [loadUserSessions, updateSessionTitleLocally]
+    [safeFetch]
   )
 
-  const createNewSession = useCallback(async () => {
-    try {
-      const effectiveUserId = getEffectiveUserId()
-      if (!effectiveUserId) return null
-      console.log('[useChat] createNewSession fetching...')
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 10000)
-      const response = await fetch(`${API_URL}/api/sessions/`, {
+  const pollSessionTitle = useCallback(
+    async (sessionIdToPoll: string): Promise<string | null> => {
+      for (let i = 0; i < TITLE_POLL_ATTEMPTS; i++) {
+        if (!mountedRef.current) return null
+
+        try {
+          const session = await restoreSession(sessionIdToPoll)
+          const currentTitle = session?.title
+          if (currentTitle && !PLACEHOLDER_TITLES.has(currentTitle)) {
+            updateSessionTitleLocally(sessionIdToPoll, currentTitle)
+            return currentTitle
+          }
+        } catch (err) {
+          console.warn('[useChat] pollSessionTitle error', err)
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, TITLE_POLL_DELAY))
+      }
+      return null
+    },
+    [restoreSession, updateSessionTitleLocally]
+  )
+
+  const createNewSession = useCallback(async (): Promise<Session | null> => {
+    const effectiveUserId = getEffectiveUserId()
+    if (!effectiveUserId) return null
+
+    const { data, error: fetchError } = await safeFetch<Session>(
+      `${API_URL}/api/sessions/`,
+      {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -205,57 +311,72 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
           clerkUserId: effectiveUserId,
           title: 'New Conversation',
         }),
-        signal: controller.signal,
-      })
-      clearTimeout(timeoutId)
-      console.log('[useChat] createNewSession response status:', response.status)
-      const created = await response.json()
+      }
+    )
 
-      if (created?.id) {
-        ensureSessionInList({
-          id: created.id,
-          title: created.title || 'New Conversation',
-          createdAt: created.createdAt || new Date().toISOString(),
-          lastMessageAt: created.lastMessageAt || new Date().toISOString(),
-        })
+    if (fetchError) {
+      console.error('Error creating session:', fetchError)
+      return null
+    }
+
+    if (isValidSession(data)) {
+      const session: Session = {
+        id: data.id,
+        title: data.title || 'New Conversation',
+        createdAt: data.createdAt || new Date().toISOString(),
+        lastMessageAt: data.lastMessageAt || new Date().toISOString(),
+      }
+      ensureSessionInList(session)
+      return session
+    }
+
+    return null
+  }, [getEffectiveUserId, safeFetch, ensureSessionInList])
+
+  const generateTitleForSession = useCallback(
+    async (sessionIdToUpdate: string, userMessage: string, assistantMessage: string) => {
+      try {
+        const { data } = await safeFetch<{ title?: string; session?: { title?: string } }>(
+          `${API_URL}/api/sessions/${sessionIdToUpdate}/generate-title`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: userMessage,
+              assistant_response: assistantMessage,
+            }),
+          }
+        )
+
+        const newTitle = data?.title || data?.session?.title
+        if (newTitle) {
+          updateSessionTitleLocally(sessionIdToUpdate, newTitle)
+        }
+      } catch (err) {
+        console.error('Failed to generate title:', err)
       }
 
-      return created
-    } catch (err) {
-      console.error('Error creating session:', err)
-      return null
-    }
-  }, [getEffectiveUserId, ensureSessionInList])
-
-  const restoreSession = useCallback(async (sessionIdToRestore: string) => {
-    try {
-      console.log('[useChat] restoreSession fetching...')
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 10000)
-      const response = await fetch(`${API_URL}/api/sessions/${sessionIdToRestore}`, {
-        signal: controller.signal,
-      })
-      clearTimeout(timeoutId)
-      console.log('[useChat] restoreSession response status:', response.status)
-      return await response.json()
-    } catch (err) {
-      console.error('[useChat] Error restoring session:', err)
-      return null
-    }
-  }, [])
+      // Poll for background title update, then refresh sessions
+      await pollSessionTitle(sessionIdToUpdate)
+      if (mountedRef.current) {
+        await loadUserSessions()
+      }
+    },
+    [safeFetch, updateSessionTitleLocally, pollSessionTitle, loadUserSessions]
+  )
 
   const initializeSession = useCallback(async () => {
-    try {
-      console.log('[useChat] initializeSession called')
-      setIsLoadingSession(true)
+    if (!mountedRef.current) return
 
-      // Load existing sessions first
+    setIsLoadingSession(true)
+
+    try {
       const existingSessions = await loadUserSessions()
 
-      if (existingSessions && existingSessions.length > 0) {
+      if (existingSessions.length > 0) {
         const mostRecent = existingSessions[0]
         const session = await restoreSession(mostRecent.id)
-        if (session) {
+        if (session && mountedRef.current) {
           setSessionId(session.id)
           setMessages(session.messages || [])
           ensureSessionInList({
@@ -268,42 +389,50 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
         }
       }
 
-      // If no sessions or restore failed, create a new one
+      // No sessions or restore failed - create new
       const newSession = await createNewSession()
-      console.log('[useChat] created session:', newSession)
-      if (newSession) {
+      if (newSession && mountedRef.current) {
         setSessionId(newSession.id)
         setMessages([])
       }
     } catch (err) {
       console.error('[useChat] Error initializing session:', err)
     } finally {
-      console.log('[useChat] initializeSession complete, setting isLoadingSession=false')
-      setIsLoadingSession(false)
+      if (mountedRef.current) {
+        setIsLoadingSession(false)
+      }
     }
-  }, [createNewSession, loadUserSessions, restoreSession, ensureSessionInList])
+  }, [loadUserSessions, restoreSession, createNewSession, ensureSessionInList])
 
   const switchSession = useCallback(
     async (newSessionId: string) => {
+      // Cancel any ongoing stream
+      abortControllerRef.current?.abort()
+
       const session = await restoreSession(newSessionId)
-      if (session) {
+      if (session && mountedRef.current) {
         setSessionId(session.id)
         setMessages(session.messages || [])
         setStreamingContent('')
         setThinkingStatus(null)
+        setError(null)
       }
     },
     [restoreSession]
   )
 
   const createNewConversation = useCallback(async () => {
+    // Cancel any ongoing stream
+    abortControllerRef.current?.abort()
+
     const newSession = await createNewSession()
-    if (newSession) {
+    if (newSession && mountedRef.current) {
       setSessionId(newSession.id)
       setMessages([])
       setStreamingContent('')
       setThinkingStatus(null)
-      loadUserSessions()
+      setError(null)
+      await loadUserSessions()
     }
   }, [createNewSession, loadUserSessions])
 
@@ -313,7 +442,9 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
         const response = await fetch(`${API_URL}/api/sessions/${sessionIdToDelete}`, {
           method: 'DELETE',
         })
-        if (response.ok) {
+
+        if (response.ok && mountedRef.current) {
+          // If deleting current session, create a new one
           if (sessionIdToDelete === sessionId) {
             const newSession = await createNewSession()
             if (newSession) {
@@ -321,7 +452,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
               setMessages([])
             }
           }
-          loadUserSessions()
+          await loadUserSessions()
         }
       } catch (err) {
         console.error('Error deleting session:', err)
@@ -332,128 +463,206 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
 
   const sendMessage = useCallback(
     async (userMessage: string) => {
-      if (!userMessage.trim()) return
+      const trimmedMessage = userMessage.trim()
+      if (!trimmedMessage || !sessionId) return
+
+      // Cancel any existing stream
+      abortControllerRef.current?.abort()
+      abortControllerRef.current = new AbortController()
 
       const isFirstMessage = messages.length === 0
+      const currentMessageIndex = messages.length // Capture for citations
 
-      setMessages((prev) => [...prev, { role: 'user', content: userMessage }])
+      // Optimistically add user message
+      setMessages((prev) => [...prev, { role: 'user', content: trimmedMessage }])
       setIsLoading(true)
       setStreamingContent('')
-      setThinkingStatus({ status: 'retrieving_context', message: 'Processing your message...', details: {} })
+      setError(null)
+      setThinkingStatus({
+        status: 'retrieving_context',
+        message: 'Processing your message...',
+        details: {},
+      })
+
+      let fullContent = ''
+      let streamFinalized = false
+
+      const finalizeStream = async () => {
+        if (streamFinalized || !mountedRef.current) return
+        streamFinalized = true
+
+        setMessages((prev) => [...prev, { role: 'assistant', content: fullContent }])
+        setStreamingContent('')
+        setThinkingStatus(null)
+        setIsLoading(false)
+
+        if (isFirstMessage && fullContent.trim()) {
+          await generateTitleForSession(sessionId, trimmedMessage, fullContent)
+        } else {
+          await loadUserSessions()
+        }
+      }
 
       try {
         const response = await fetch(`${API_URL}/api/chat/stream`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            message: userMessage,
+            message: trimmedMessage,
             session_id: sessionId,
             clerk_user_id: userId || null,
             user_name: userName || null,
             stream: true,
           }),
+          signal: abortControllerRef.current.signal,
         })
 
-        const reader = response.body?.getReader()
-        const decoder = new TextDecoder()
-        let fullContent = ''
-        let streamEnded = false
-
-        const finalizeAssistantMessage = async () => {
-          if (streamEnded) return
-          streamEnded = true
-
-          setMessages((prev) => [...prev, { role: 'assistant', content: fullContent }])
-          setStreamingContent('')
-          setThinkingStatus(null)
-
-          if (isFirstMessage && sessionId && fullContent.trim()) {
-            await generateTitleForSession(sessionId, userMessage, fullContent)
-          } else {
-            await loadUserSessions()
-          }
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
         }
 
-        if (reader) {
+        const body = response.body
+        if (!body) {
+          throw new Error('Response body is null')
+        }
+
+        const reader = body.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ''
+
+        try {
           while (true) {
             const { done, value } = await reader.read()
+
             if (done) {
-              // Stream ended - finalize if we have content
-              if (fullContent && !streamEnded) {
-                await finalizeAssistantMessage()
+              // Process any remaining buffer
+              if (buffer.trim()) {
+                processSSELine(buffer)
+              }
+              if (fullContent && !streamFinalized) {
+                await finalizeStream()
               }
               break
             }
 
-            const chunk = decoder.decode(value, { stream: true })
-            const lines = chunk.split('\n')
+            buffer += decoder.decode(value, { stream: true })
+            const lines = buffer.split('\n')
+
+            // Keep the last potentially incomplete line in buffer
+            buffer = lines.pop() || ''
 
             for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const data = line.slice(6)
-                if (data === '[DONE]') {
-                  if (!streamEnded) {
-                    await finalizeAssistantMessage()
-                  }
-                  break
-                }
-                try {
-                  const parsed = JSON.parse(data)
-                  if (parsed.type === 'status') {
-                    setThinkingStatus({
-                      status: parsed.status || 'generating',
-                      message: parsed.message || 'Processing...',
-                      details: parsed.details || {},
-                    })
-                  }
-                  const content = parsed.content || parsed.chunk
-                  if (content) {
-                    fullContent += content
-                    setStreamingContent(fullContent)
-                    setThinkingStatus(null)
-                  }
-                  if (parsed.citations) {
-                    const currentIndex = messages.length
-                    setMessageCitations((prev) => ({ ...prev, [currentIndex]: parsed.citations }))
-                  }
-                  if (parsed.compression_needed) {
-                    setCompressionNeeded(true)
-                    setTimeout(() => setCompressionNeeded(false), 8000)
-                  }
-                  if (parsed.total_tokens) {
-                    setTotalTokens(parsed.total_tokens)
-                  }
-                } catch {
-                  // Ignore parse errors for malformed chunks
-                }
+              processSSELine(line)
+            }
+          }
+        } finally {
+          reader.releaseLock()
+        }
+
+        function processSSELine(line: string) {
+          const trimmedLine = line.trim()
+          if (!trimmedLine.startsWith('data: ')) return
+
+          const data = trimmedLine.slice(6)
+          if (data === '[DONE]') {
+            return
+          }
+
+          try {
+            const parsed = JSON.parse(data)
+
+            // Handle status updates
+            if (parsed.type === 'status' && mountedRef.current) {
+              setThinkingStatus({
+                status: parsed.status || 'generating',
+                message: parsed.message || 'Processing...',
+                details: parsed.details || {},
+              })
+            }
+
+            // Handle content chunks
+            const content = parsed.content || parsed.chunk
+            if (content) {
+              fullContent += content
+              if (mountedRef.current) {
+                setStreamingContent(fullContent)
+                setThinkingStatus(null)
               }
             }
+
+            // Handle citations
+            if (parsed.citations && mountedRef.current) {
+              setMessageCitations((prev) => ({
+                ...prev,
+                [currentMessageIndex + 1]: parsed.citations,
+              }))
+            }
+
+            // Handle compression warning
+            if (parsed.compression_needed && mountedRef.current) {
+              setCompressionNeeded(true)
+              setTimeout(() => {
+                if (mountedRef.current) {
+                  setCompressionNeeded(false)
+                }
+              }, 8000)
+            }
+
+            // Handle token count
+            if (parsed.total_tokens && mountedRef.current) {
+              setTotalTokens(parsed.total_tokens)
+            }
+          } catch {
+            // Ignore JSON parse errors for malformed chunks
           }
         }
       } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          // Request was cancelled - clean up silently
+          if (mountedRef.current) {
+            setIsLoading(false)
+            setThinkingStatus(null)
+          }
+          return
+        }
+
         console.error('Error:', err)
-        setError('Failed to get response. Please try again.')
-        setThinkingStatus({ status: 'error', message: 'Something went wrong', details: {} })
-        setMessages((prev) => [
-          ...prev,
-          { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' },
-        ])
-        setStreamingContent('')
-        setTimeout(() => {
-          setError(null)
-          setThinkingStatus(null)
-        }, 5000)
-      } finally {
-        setIsLoading(false)
+
+        if (mountedRef.current) {
+          const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+          setError(`Failed to get response: ${errorMessage}`)
+          setThinkingStatus({ status: 'error', message: 'Something went wrong', details: {} })
+          setMessages((prev) => [
+            ...prev,
+            { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' },
+          ])
+          setStreamingContent('')
+          setIsLoading(false)
+
+          setTimeout(() => {
+            if (mountedRef.current) {
+              setError(null)
+              setThinkingStatus(null)
+            }
+          }, 5000)
+        }
       }
     },
-    [sessionId, userId, userName, messages.length, loadUserSessions, generateTitleForSession]
+    [
+      sessionId,
+      userId,
+      userName,
+      messages.length,
+      generateTitleForSession,
+      loadUserSessions,
+    ]
   )
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault()
       const userMessage = input.trim()
+      if (!userMessage) return
       setInput('')
       await sendMessage(userMessage)
     },
@@ -462,14 +671,32 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
 
   const clearError = useCallback(() => setError(null), [])
 
+  const cancelStream = useCallback(() => {
+    abortControllerRef.current?.abort()
+    setIsLoading(false)
+    setThinkingStatus(null)
+    setStreamingContent('')
+  }, [])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      abortControllerRef.current?.abort()
+    }
+  }, [])
+
   // Initialize session on mount
   useEffect(() => {
     initializeSession()
   }, [initializeSession])
 
-  // Load user data when available
+  // Load user data when userId changes
   useEffect(() => {
     if (userId) {
+      // Reset cached effective user ID when userId changes
+      effectiveUserIdRef.current = null
       loadUserSessions()
       loadUserProfile()
       loadUserAccount()
@@ -504,5 +731,6 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     createNewConversation,
     deleteSession,
     clearError,
+    cancelStream,
   }
 }
