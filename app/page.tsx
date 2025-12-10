@@ -70,7 +70,7 @@ export default function ChatPage() {
   }
 
   // Loading state
-  if (!isUserLoaded || isLoadingSession || isLoadingAccount) {
+  if (isLoadingSession || isLoadingAccount) {
     return <LoadingScreen />
   }
 
