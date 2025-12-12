@@ -98,6 +98,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
   const abortControllerRef = useRef<AbortController | null>(null)
   const mountedRef = useRef(true)
   const effectiveUserIdRef = useRef<string | null>(null)
+  const profileLoadedRef = useRef<Promise<void> | null>(null)
 
   // Memoized effective user ID - computed once and cached
   const getEffectiveUserId = useCallback((): string | null => {
@@ -188,18 +189,23 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     if (!effectiveUserId || !mountedRef.current) return
 
     setIsLoadingProfile(true)
-    try {
-      const { data } = await safeFetch<UserProfile>(
-        `${API_URL}/api/users/${effectiveUserId}/scores`
-      )
-      if (mountedRef.current && data) {
-        setUserProfile(data)
+    const profilePromise = (async () => {
+      try {
+        const { data } = await safeFetch<UserProfile>(
+          `${API_URL}/api/users/${effectiveUserId}/scores`
+        )
+        if (mountedRef.current && data) {
+          setUserProfile(data)
+        }
+      } finally {
+        if (mountedRef.current) {
+          setIsLoadingProfile(false)
+        }
       }
-    } finally {
-      if (mountedRef.current) {
-        setIsLoadingProfile(false)
-      }
-    }
+    })()
+    
+    profileLoadedRef.current = profilePromise
+    await profilePromise
   }, [getEffectiveUserId, safeFetch])
 
   const loadUserAccount = useCallback(async () => {
@@ -465,6 +471,22 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     async (userMessage: string) => {
       const trimmedMessage = userMessage.trim()
       if (!trimmedMessage || !sessionId) return
+
+      // Ensure profile is loaded before sending message with user context
+      if (userId) {
+        if (profileLoadedRef.current) {
+          // Profile load is in progress, wait for it
+          try {
+            await profileLoadedRef.current
+          } catch (e) {
+            // Profile load failed, but continue anyway
+            console.warn('Profile load failed:', e)
+          }
+        } else if (!userProfile) {
+          // Profile hasn't been loaded yet, load it now
+          await loadUserProfile()
+        }
+      }
 
       const selveScores = userProfile?.scores || null
       const assessmentBase =
