@@ -191,7 +191,7 @@ export default function Sidebar({
                             <span className="absolute right-2 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-white/50 animate-ping" />
                           </span>
                         ) : (
-                          <span className={`truncate ${isActive ? 'font-semibold' : ''}`}>{session.title}</span>
+                          <span className={`truncate ${isActive ? 'font-semibold' : ''}`} title={session.title}>{session.title}</span>
                         )}
                         {onDeleteSession && (
                           <button

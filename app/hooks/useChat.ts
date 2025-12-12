@@ -673,6 +673,13 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
           ])
           setStreamingContent('')
           setIsLoading(false)
+          
+          // Generate title from user's question even if response failed
+          if (isFirstMessage) {
+            await generateTitleForSession(sessionId, trimmedMessage, '')
+          } else {
+            await loadUserSessions()
+          }
 
           setTimeout(() => {
             if (mountedRef.current) {
