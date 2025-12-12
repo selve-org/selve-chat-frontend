@@ -1,7 +1,7 @@
 'use client'
 
 import { ArrowUp, Paperclip } from 'lucide-react'
-import { FormEvent, KeyboardEvent, useRef } from 'react'
+import { FormEvent, KeyboardEvent, useRef, useEffect } from 'react'
 
 interface ChatInputProps {
   value: string
@@ -40,6 +40,13 @@ export default function ChatInput({
       textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`
     }
   }
+
+  // Reset textarea height when value is cleared
+  useEffect(() => {
+    if (!value && textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+    }
+  }, [value])
 
   return (
     <footer className="border-t border-[#1f1e1c] bg-[#0f0f0e] px-4 py-4">

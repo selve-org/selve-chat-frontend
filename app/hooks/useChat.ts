@@ -99,6 +99,8 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
   const mountedRef = useRef(true)
   const effectiveUserIdRef = useRef<string | null>(null)
   const profileLoadedRef = useRef<Promise<void> | null>(null)
+  // Track if we're currently in a "new conversation" state (no session yet)
+  const isPendingNewSession = useRef(false)
 
   // Memoized effective user ID - computed once and cached
   const getEffectiveUserId = useCallback((): string | null => {
@@ -305,7 +307,11 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
 
   const createNewSession = useCallback(async (): Promise<Session | null> => {
     const effectiveUserId = getEffectiveUserId()
-    if (!effectiveUserId) return null
+    console.log('[createNewSession] effectiveUserId:', effectiveUserId)
+    if (!effectiveUserId) {
+      console.error('[createNewSession] No user ID available')
+      return null
+    }
 
     const { data, error: fetchError } = await safeFetch<Session>(
       `${API_URL}/api/sessions/`,
@@ -321,9 +327,11 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     )
 
     if (fetchError) {
-      console.error('Error creating session:', fetchError)
+      console.error('[createNewSession] Error creating session:', fetchError)
       return null
     }
+
+    console.log('[createNewSession] Session created successfully:', data)
 
     if (isValidSession(data)) {
       const session: Session = {
@@ -333,6 +341,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
         lastMessageAt: data.lastMessageAt || new Date().toISOString(),
       }
       ensureSessionInList(session)
+      isPendingNewSession.current = false
       return session
     }
 
@@ -377,14 +386,14 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     setIsLoadingSession(true)
 
     try {
-      const existingSessions = await loadUserSessions()
-
-      if (existingSessions.length > 0) {
-        const mostRecent = existingSessions[0]
-        const session = await restoreSession(mostRecent.id)
+      // Check if there's a persisted session ID in sessionStorage (for page refreshes)
+      const persistedSessionId = sessionStorage.getItem('currentSessionId')
+      if (persistedSessionId) {
+        const session = await restoreSession(persistedSessionId)
         if (session && mountedRef.current) {
           setSessionId(session.id)
           setMessages(session.messages || [])
+          isPendingNewSession.current = false
           ensureSessionInList({
             id: session.id,
             title: session.title || 'New Conversation',
@@ -395,11 +404,32 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
         }
       }
 
-      // No sessions or restore failed - create new
-      const newSession = await createNewSession()
-      if (newSession && mountedRef.current) {
-        setSessionId(newSession.id)
+      const existingSessions = await loadUserSessions()
+
+      if (existingSessions.length > 0) {
+        const mostRecent = existingSessions[0]
+        const session = await restoreSession(mostRecent.id)
+        if (session && mountedRef.current) {
+          setSessionId(session.id)
+          setMessages(session.messages || [])
+          isPendingNewSession.current = false
+          sessionStorage.setItem('currentSessionId', session.id)
+          ensureSessionInList({
+            id: session.id,
+            title: session.title || 'New Conversation',
+            createdAt: session.createdAt || new Date().toISOString(),
+            lastMessageAt: session.lastMessageAt || new Date().toISOString(),
+          })
+          return
+        }
+      }
+
+      // No sessions - mark as pending new session, don't create yet
+      if (mountedRef.current) {
+        setSessionId(null)  // Use null instead of '' to indicate "no session yet"
         setMessages([])
+        isPendingNewSession.current = true
+        sessionStorage.removeItem('currentSessionId')
       }
     } catch (err) {
       console.error('[useChat] Error initializing session:', err)
@@ -408,7 +438,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
         setIsLoadingSession(false)
       }
     }
-  }, [loadUserSessions, restoreSession, createNewSession, ensureSessionInList])
+  }, [loadUserSessions, restoreSession, ensureSessionInList])
 
   const switchSession = useCallback(
     async (newSessionId: string) => {
@@ -419,6 +449,8 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
       if (session && mountedRef.current) {
         setSessionId(session.id)
         setMessages(session.messages || [])
+        isPendingNewSession.current = false
+        sessionStorage.setItem('currentSessionId', session.id)
         setStreamingContent('')
         setThinkingStatus(null)
         setError(null)
@@ -428,19 +460,33 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
   )
 
   const createNewConversation = useCallback(async () => {
+    // If we're already in a pending new session state with no messages, do nothing
+    if (isPendingNewSession.current && messages.length === 0) {
+      console.log('[createNewConversation] Already in new conversation state, ignoring')
+      return
+    }
+
+    // If current session has no messages, don't create another empty one
+    if (sessionId && messages.length === 0) {
+      console.log('[createNewConversation] Current session is empty, ignoring')
+      return
+    }
+
     // Cancel any ongoing stream
     abortControllerRef.current?.abort()
 
-    const newSession = await createNewSession()
-    if (newSession && mountedRef.current) {
-      setSessionId(newSession.id)
+    // Mark as pending new session, don't actually create until first message
+    if (mountedRef.current) {
+      setSessionId(null)
       setMessages([])
+      isPendingNewSession.current = true
+      sessionStorage.removeItem('currentSessionId')
       setStreamingContent('')
       setThinkingStatus(null)
       setError(null)
       await loadUserSessions()
     }
-  }, [createNewSession, loadUserSessions])
+  }, [loadUserSessions, messages.length, sessionId])
 
   const deleteSession = useCallback(
     async (sessionIdToDelete: string) => {
@@ -450,13 +496,12 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
         })
 
         if (response.ok && mountedRef.current) {
-          // If deleting current session, create a new one
+          // If deleting current session, go to new conversation state
           if (sessionIdToDelete === sessionId) {
-            const newSession = await createNewSession()
-            if (newSession) {
-              setSessionId(newSession.id)
-              setMessages([])
-            }
+            setSessionId(null)
+            setMessages([])
+            isPendingNewSession.current = true
+            sessionStorage.removeItem('currentSessionId')
           }
           await loadUserSessions()
         }
@@ -464,26 +509,33 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
         console.error('Error deleting session:', err)
       }
     },
-    [sessionId, createNewSession, loadUserSessions]
+    [sessionId, loadUserSessions]
   )
 
   const sendMessage = useCallback(
     async (userMessage: string) => {
       const trimmedMessage = userMessage.trim()
-      if (!trimmedMessage || !sessionId) return
+      
+      // Only check for empty message, NOT for sessionId
+      // Session will be created lazily if needed
+      if (!trimmedMessage) {
+        console.log('[sendMessage] Empty message, ignoring')
+        return
+      }
+
+      console.log('[sendMessage] Starting with message:', trimmedMessage.slice(0, 50))
+      console.log('[sendMessage] Current sessionId:', sessionId)
+      console.log('[sendMessage] isPendingNewSession:', isPendingNewSession.current)
 
       // Ensure profile is loaded before sending message with user context
       if (userId) {
         if (profileLoadedRef.current) {
-          // Profile load is in progress, wait for it
           try {
             await profileLoadedRef.current
           } catch (e) {
-            // Profile load failed, but continue anyway
             console.warn('Profile load failed:', e)
           }
         } else if (!userProfile) {
-          // Profile hasn't been loaded yet, load it now
           await loadUserProfile()
         }
       }
@@ -499,12 +551,31 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
 
       const assessmentUrl = `${assessmentBase.replace(/\/$/, '')}/assessment`
 
+      // If no session exists yet (null or pending), create one now
+      let effectiveSessionId = sessionId
+      if (!effectiveSessionId || isPendingNewSession.current) {
+        console.log('[sendMessage] No session exists, creating new session...')
+        const newSession = await createNewSession()
+        if (newSession) {
+          effectiveSessionId = newSession.id
+          setSessionId(newSession.id)
+          sessionStorage.setItem('currentSessionId', newSession.id)
+          console.log('[sendMessage] New session created:', newSession.id)
+        } else {
+          const errorMsg = 'Failed to create session - please check your connection'
+          console.error('[sendMessage]', errorMsg)
+          setError(errorMsg)
+          setIsLoading(false)
+          return
+        }
+      }
+
       // Cancel any existing stream
       abortControllerRef.current?.abort()
       abortControllerRef.current = new AbortController()
 
       const isFirstMessage = messages.length === 0
-      const currentMessageIndex = messages.length // Capture for citations
+      const currentMessageIndex = messages.length
 
       // Optimistically add user message
       setMessages((prev) => [...prev, { role: 'user', content: trimmedMessage }])
@@ -530,7 +601,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
         setIsLoading(false)
 
         if (isFirstMessage && fullContent.trim()) {
-          await generateTitleForSession(sessionId, trimmedMessage, fullContent)
+          await generateTitleForSession(effectiveSessionId!, trimmedMessage, fullContent)
         } else {
           await loadUserSessions()
         }
@@ -542,7 +613,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             message: trimmedMessage,
-            session_id: sessionId,
+            session_id: effectiveSessionId,
             clerk_user_id: userId || null,
             user_name: userName || null,
             selve_scores: selveScores,
@@ -570,7 +641,6 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
             const { done, value } = await reader.read()
 
             if (done) {
-              // Process any remaining buffer
               if (buffer.trim()) {
                 processSSELine(buffer)
               }
@@ -582,8 +652,6 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
 
             buffer += decoder.decode(value, { stream: true })
             const lines = buffer.split('\n')
-
-            // Keep the last potentially incomplete line in buffer
             buffer = lines.pop() || ''
 
             for (const line of lines) {
@@ -606,7 +674,6 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
           try {
             const parsed = JSON.parse(data)
 
-            // Handle status updates
             if (parsed.type === 'status' && mountedRef.current) {
               setThinkingStatus({
                 status: parsed.status || 'generating',
@@ -615,7 +682,6 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
               })
             }
 
-            // Handle content chunks
             const content = parsed.content || parsed.chunk
             if (content) {
               fullContent += content
@@ -625,7 +691,6 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
               }
             }
 
-            // Handle citations
             if (parsed.citations && mountedRef.current) {
               setMessageCitations((prev) => ({
                 ...prev,
@@ -633,7 +698,6 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
               }))
             }
 
-            // Handle compression warning
             if (parsed.compression_needed && mountedRef.current) {
               setCompressionNeeded(true)
               setTimeout(() => {
@@ -643,17 +707,15 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
               }, 8000)
             }
 
-            // Handle token count
             if (parsed.total_tokens && mountedRef.current) {
               setTotalTokens(parsed.total_tokens)
             }
           } catch {
-            // Ignore JSON parse errors for malformed chunks
+            // Ignore JSON parse errors
           }
         }
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') {
-          // Request was cancelled - clean up silently
           if (mountedRef.current) {
             setIsLoading(false)
             setThinkingStatus(null)
@@ -674,9 +736,8 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
           setStreamingContent('')
           setIsLoading(false)
           
-          // Generate title from user's question even if response failed
-          if (isFirstMessage) {
-            await generateTitleForSession(sessionId, trimmedMessage, '')
+          if (isFirstMessage && effectiveSessionId) {
+            await generateTitleForSession(effectiveSessionId, trimmedMessage, '')
           } else {
             await loadUserSessions()
           }
@@ -696,8 +757,10 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
       userName,
       userProfile,
       messages.length,
+      createNewSession,
       generateTitleForSession,
       loadUserSessions,
+      loadUserProfile,
     ]
   )
 
@@ -738,7 +801,6 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
   // Load user data when userId changes
   useEffect(() => {
     if (userId) {
-      // Reset cached effective user ID when userId changes
       effectiveUserIdRef.current = null
       loadUserSessions()
       loadUserProfile()
@@ -766,6 +828,8 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     compressionNeeded,
     totalTokens,
     hasMessages: messages.length > 0 || !!streamingContent,
+    // New: expose if we're in a pending new session state
+    isPendingNewSession: isPendingNewSession.current,
 
     // Actions
     handleSubmit,
