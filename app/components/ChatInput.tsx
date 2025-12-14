@@ -8,6 +8,8 @@ interface ChatInputProps {
   onChange: (value: string) => void
   onSubmit: (e: FormEvent) => void
   isLoading: boolean
+  isBanned?: boolean
+  banExpiresAt?: string | null
   placeholder?: string
   suggestions?: string[]
   onSuggestionClick?: (suggestion: string) => void
@@ -18,6 +20,8 @@ export default function ChatInput({
   onChange,
   onSubmit,
   isLoading,
+  isBanned = false,
+  banExpiresAt = null,
   placeholder = 'Ask me anything about SELVE...',
   suggestions = [],
   onSuggestionClick,
@@ -27,7 +31,7 @@ export default function ChatInput({
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      if (value.trim() && !isLoading) {
+      if (value.trim() && !isLoading && !isBanned) {
         onSubmit(e as unknown as FormEvent)
       }
     }
@@ -87,8 +91,8 @@ export default function ChatInput({
                 handleInput()
               }}
               onKeyDown={handleKeyDown}
-              placeholder={placeholder}
-              disabled={isLoading}
+              placeholder={isBanned ? 'SELVE is unavailable' : placeholder}
+              disabled={isLoading || isBanned}
               rows={1}
               className="max-h-[200px] min-h-[44px] flex-1 resize-none bg-transparent py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none disabled:text-zinc-400"
             />
@@ -96,7 +100,7 @@ export default function ChatInput({
             {/* Submit button */}
             <button
               type="submit"
-              disabled={!value.trim() || isLoading}
+              disabled={!value.trim() || isLoading || isBanned}
               className="shrink-0 rounded-xl bg-gradient-to-br from-[#b88dff] via-[#9d7bff] to-[#7f5af0] p-2.5 text-white transition-all hover:brightness-110 disabled:from-[#3f2f66] disabled:via-[#3f2f66] disabled:to-[#3f2f66] disabled:text-zinc-500"
               aria-label="Send message"
             >
@@ -107,7 +111,13 @@ export default function ChatInput({
 
         {/* Bottom actions */}
         <div className="flex items-center justify-between text-xs text-zinc-500">
-          <span className="text-zinc-500">Press Enter to send, Shift+Enter for new line</span>
+          {isBanned && banExpiresAt ? (
+            <span className="text-red-400">
+              Access restricted. Try again at {new Date(banExpiresAt).toLocaleString()}
+            </span>
+          ) : (
+            <span className="text-zinc-500">Press Enter to send, Shift+Enter for new line</span>
+          )}
         </div>
       </div>
     </footer>

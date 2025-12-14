@@ -3,6 +3,7 @@
 import React from 'react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import DOMPurify from 'dompurify'
 
 interface MarkdownRendererProps {
   content: string
@@ -53,9 +54,12 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         )
       }
 
-      // Process text content
+      // Process text content (sanitize to prevent XSS)
       return (
-        <div key={idx} dangerouslySetInnerHTML={{ __html: processTextMarkdown(part.content) }} />
+        <div
+          key={idx}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(processTextMarkdown(part.content)) }}
+        />
       )
     })
   }

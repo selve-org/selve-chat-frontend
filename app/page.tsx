@@ -50,6 +50,9 @@ export default function ChatPage() {
     messageCitations,
     thinkingStatus,
     hasMessages,
+    isBanned,
+    banExpiresAt,
+    securityWarning,
     handleSubmit,
     switchSession,
     createNewConversation,
@@ -185,12 +188,23 @@ export default function ChatPage() {
             />
           )}
 
+          {/* Security warning banner */}
+          {securityWarning && (
+            <div className="border-t border-[#1f1e1c] bg-orange-950/30 px-4 py-3">
+              <div className="mx-auto max-w-5xl">
+                <p className="text-sm text-orange-300">{securityWarning}</p>
+              </div>
+            </div>
+          )}
+
           {/* Chat input */}
           <ChatInput
             value={input}
             onChange={setInput}
             onSubmit={handleSubmit}
             isLoading={isLoading}
+            isBanned={isBanned}
+            banExpiresAt={banExpiresAt}
             placeholder="Ask me anything about SELVE..."
           />
         </div>

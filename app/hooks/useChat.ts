@@ -59,7 +59,7 @@ const TITLE_POLL_ATTEMPTS = 5
 const TITLE_POLL_DELAY = 600
 const PLACEHOLDER_TITLES = new Set(['New Conversation', 'Generating title...', '...'])
 
-// Type guard for session validation
+// Type guards
 function isValidSession(data: unknown): data is Session {
   return (
     typeof data === 'object' &&
@@ -69,7 +69,6 @@ function isValidSession(data: unknown): data is Session {
   )
 }
 
-// Type guard for session with messages
 function isValidSessionWithMessages(
   data: unknown
 ): data is Session & { messages?: Message[] } {
@@ -77,6 +76,7 @@ function isValidSessionWithMessages(
 }
 
 export function useChat({ userId, userName }: UseChatOptions = {}) {
+  // Core state
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -85,24 +85,32 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
   const [isLoadingSession, setIsLoadingSession] = useState(true)
   const [sessions, setSessions] = useState<Session[]>([])
   const [error, setError] = useState<string | null>(null)
+  
+  // User state
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [userAccount, setUserAccount] = useState<UserAccount | null>(null)
-  const [messageCitations, setMessageCitations] = useState<MessageCitations>({})
   const [isLoadingProfile, setIsLoadingProfile] = useState(false)
   const [isLoadingAccount, setIsLoadingAccount] = useState(false)
+  
+  // UI state
+  const [messageCitations, setMessageCitations] = useState<MessageCitations>({})
   const [thinkingStatus, setThinkingStatus] = useState<ThinkingStatus | null>(null)
   const [compressionNeeded, setCompressionNeeded] = useState(false)
   const [totalTokens, setTotalTokens] = useState<number | null>(null)
+  
+  // Security state
+  const [isBanned, setIsBanned] = useState(false)
+  const [banExpiresAt, setBanExpiresAt] = useState<string | null>(null)
+  const [securityWarning, setSecurityWarning] = useState<string | null>(null)
 
-  // Refs for cleanup and stable references
+  // Refs
   const abortControllerRef = useRef<AbortController | null>(null)
   const mountedRef = useRef(true)
   const effectiveUserIdRef = useRef<string | null>(null)
   const profileLoadedRef = useRef<Promise<void> | null>(null)
-  // Track if we're currently in a "new conversation" state (no session yet)
   const isPendingNewSession = useRef(false)
 
-  // Memoized effective user ID - computed once and cached
+  // Get effective user ID (real or anonymous)
   const getEffectiveUserId = useCallback((): string | null => {
     if (userId) {
       effectiveUserIdRef.current = userId
@@ -129,7 +137,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     return stored
   }, [userId])
 
-  // Safe fetch wrapper with timeout and abort handling
+  // Safe fetch with timeout
   const safeFetch = useCallback(
     async <T>(
       url: string,
@@ -166,6 +174,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     []
   )
 
+  // Session list management
   const ensureSessionInList = useCallback((session: Session) => {
     setSessions((prev) => {
       const existingIndex = prev.findIndex((s) => s.id === session.id)
@@ -186,6 +195,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     )
   }, [])
 
+  // Load user profile
   const loadUserProfile = useCallback(async () => {
     const effectiveUserId = getEffectiveUserId()
     if (!effectiveUserId || !mountedRef.current) return
@@ -210,6 +220,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     await profilePromise
   }, [getEffectiveUserId, safeFetch])
 
+  // Load user account
   const loadUserAccount = useCallback(async () => {
     const effectiveUserId = getEffectiveUserId()
     if (!effectiveUserId || !mountedRef.current) return
@@ -229,6 +240,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     }
   }, [getEffectiveUserId, safeFetch])
 
+  // Load user sessions
   const loadUserSessions = useCallback(async (): Promise<Session[]> => {
     const effectiveUserId = getEffectiveUserId()
     if (!effectiveUserId) return []
@@ -264,10 +276,9 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     }
   }, [getEffectiveUserId, safeFetch])
 
+  // Restore a session
   const restoreSession = useCallback(
-    async (
-      sessionIdToRestore: string
-    ): Promise<(Session & { messages?: Message[] }) | null> => {
+    async (sessionIdToRestore: string): Promise<(Session & { messages?: Message[] }) | null> => {
       const { data, error: fetchError } = await safeFetch<Session & { messages?: Message[] }>(
         `${API_URL}/api/sessions/${sessionIdToRestore}`
       )
@@ -282,6 +293,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     [safeFetch]
   )
 
+  // Poll for session title
   const pollSessionTitle = useCallback(
     async (sessionIdToPoll: string): Promise<string | null> => {
       for (let i = 0; i < TITLE_POLL_ATTEMPTS; i++) {
@@ -305,9 +317,9 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     [restoreSession, updateSessionTitleLocally]
   )
 
+  // Create new session
   const createNewSession = useCallback(async (): Promise<Session | null> => {
     const effectiveUserId = getEffectiveUserId()
-    console.log('[createNewSession] effectiveUserId:', effectiveUserId)
     if (!effectiveUserId) {
       console.error('[createNewSession] No user ID available')
       return null
@@ -327,11 +339,9 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     )
 
     if (fetchError) {
-      console.error('[createNewSession] Error creating session:', fetchError)
+      console.error('[createNewSession] Error:', fetchError)
       return null
     }
-
-    console.log('[createNewSession] Session created successfully:', data)
 
     if (isValidSession(data)) {
       const session: Session = {
@@ -348,6 +358,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     return null
   }, [getEffectiveUserId, safeFetch, ensureSessionInList])
 
+  // Generate title for session
   const generateTitleForSession = useCallback(
     async (sessionIdToUpdate: string, userMessage: string, assistantMessage: string) => {
       try {
@@ -371,7 +382,6 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
         console.error('Failed to generate title:', err)
       }
 
-      // Poll for background title update, then refresh sessions
       await pollSessionTitle(sessionIdToUpdate)
       if (mountedRef.current) {
         await loadUserSessions()
@@ -380,13 +390,13 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     [safeFetch, updateSessionTitleLocally, pollSessionTitle, loadUserSessions]
   )
 
+  // Initialize session on mount
   const initializeSession = useCallback(async () => {
     if (!mountedRef.current) return
 
     setIsLoadingSession(true)
 
     try {
-      // Check if there's a persisted session ID in sessionStorage (for page refreshes)
       const persistedSessionId = sessionStorage.getItem('currentSessionId')
       if (persistedSessionId) {
         const session = await restoreSession(persistedSessionId)
@@ -424,9 +434,9 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
         }
       }
 
-      // No sessions - mark as pending new session, don't create yet
+      // No sessions - wait for first message
       if (mountedRef.current) {
-        setSessionId(null)  // Use null instead of '' to indicate "no session yet"
+        setSessionId(null)
         setMessages([])
         isPendingNewSession.current = true
         sessionStorage.removeItem('currentSessionId')
@@ -440,9 +450,9 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     }
   }, [loadUserSessions, restoreSession, ensureSessionInList])
 
+  // Switch to a different session
   const switchSession = useCallback(
     async (newSessionId: string) => {
-      // Cancel any ongoing stream
       abortControllerRef.current?.abort()
 
       const session = await restoreSession(newSessionId)
@@ -454,28 +464,24 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
         setStreamingContent('')
         setThinkingStatus(null)
         setError(null)
+        setSecurityWarning(null)
       }
     },
     [restoreSession]
   )
 
+  // Create new conversation
   const createNewConversation = useCallback(async () => {
-    // If we're already in a pending new session state with no messages, do nothing
+    // Prevent creating duplicate empty sessions
     if (isPendingNewSession.current && messages.length === 0) {
-      console.log('[createNewConversation] Already in new conversation state, ignoring')
       return
     }
-
-    // If current session has no messages, don't create another empty one
     if (sessionId && messages.length === 0) {
-      console.log('[createNewConversation] Current session is empty, ignoring')
       return
     }
 
-    // Cancel any ongoing stream
     abortControllerRef.current?.abort()
 
-    // Mark as pending new session, don't actually create until first message
     if (mountedRef.current) {
       setSessionId(null)
       setMessages([])
@@ -484,10 +490,12 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
       setStreamingContent('')
       setThinkingStatus(null)
       setError(null)
+      setSecurityWarning(null)
       await loadUserSessions()
     }
   }, [loadUserSessions, messages.length, sessionId])
 
+  // Delete session
   const deleteSession = useCallback(
     async (sessionIdToDelete: string) => {
       try {
@@ -496,7 +504,6 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
         })
 
         if (response.ok && mountedRef.current) {
-          // If deleting current session, go to new conversation state
           if (sessionIdToDelete === sessionId) {
             setSessionId(null)
             setMessages([])
@@ -512,22 +519,19 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     [sessionId, loadUserSessions]
   )
 
+  // Main send message function
   const sendMessage = useCallback(
     async (userMessage: string) => {
       const trimmedMessage = userMessage.trim()
-      
-      // Only check for empty message, NOT for sessionId
-      // Session will be created lazily if needed
-      if (!trimmedMessage) {
-        console.log('[sendMessage] Empty message, ignoring')
+      if (!trimmedMessage) return
+
+      // Don't send if banned
+      if (isBanned) {
+        setError('You are currently restricted from sending messages.')
         return
       }
 
-      console.log('[sendMessage] Starting with message:', trimmedMessage.slice(0, 50))
-      console.log('[sendMessage] Current sessionId:', sessionId)
-      console.log('[sendMessage] isPendingNewSession:', isPendingNewSession.current)
-
-      // Ensure profile is loaded before sending message with user context
+      // Load profile if needed
       if (userId) {
         if (profileLoadedRef.current) {
           try {
@@ -544,33 +548,24 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
       const assessmentBase =
         process.env.NEXT_PUBLIC_ASSESSMENT_URL ||
         process.env.NEXT_PUBLIC_MAIN_APP_URL ||
-        process.env.MAIN_APP_URL ||
-        process.env.MAIN_APP_URL_PROD ||
-        process.env.MAIN_APP_URL_DEV ||
         (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
-
       const assessmentUrl = `${assessmentBase.replace(/\/$/, '')}/assessment`
 
-      // If no session exists yet (null or pending), create one now
+      // Create session if needed
       let effectiveSessionId = sessionId
       if (!effectiveSessionId || isPendingNewSession.current) {
-        console.log('[sendMessage] No session exists, creating new session...')
         const newSession = await createNewSession()
         if (newSession) {
           effectiveSessionId = newSession.id
           setSessionId(newSession.id)
           sessionStorage.setItem('currentSessionId', newSession.id)
-          console.log('[sendMessage] New session created:', newSession.id)
         } else {
-          const errorMsg = 'Failed to create session - please check your connection'
-          console.error('[sendMessage]', errorMsg)
-          setError(errorMsg)
-          setIsLoading(false)
+          setError('Failed to create session - please check your connection')
           return
         }
       }
 
-      // Cancel any existing stream
+      // Setup request
       abortControllerRef.current?.abort()
       abortControllerRef.current = new AbortController()
 
@@ -582,6 +577,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
       setIsLoading(true)
       setStreamingContent('')
       setError(null)
+      setSecurityWarning(null)
       setThinkingStatus({
         status: 'retrieving_context',
         message: 'Processing your message...',
@@ -590,18 +586,25 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
 
       let fullContent = ''
       let streamFinalized = false
+      let receivedBan = false
+      let receivedWarning = false
 
-      const finalizeStream = async () => {
+      const finalizeStream = async (content: string = fullContent) => {
         if (streamFinalized || !mountedRef.current) return
         streamFinalized = true
 
-        setMessages((prev) => [...prev, { role: 'assistant', content: fullContent }])
+        // Only add assistant message if we have content
+        if (content.trim()) {
+          setMessages((prev) => [...prev, { role: 'assistant', content }])
+        }
+        
         setStreamingContent('')
         setThinkingStatus(null)
         setIsLoading(false)
 
-        if (isFirstMessage && fullContent.trim()) {
-          await generateTitleForSession(effectiveSessionId!, trimmedMessage, fullContent)
+        // Generate title for first message
+        if (isFirstMessage && content.trim() && effectiveSessionId) {
+          await generateTitleForSession(effectiveSessionId, trimmedMessage, content)
         } else {
           await loadUserSessions()
         }
@@ -636,15 +639,105 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
         const decoder = new TextDecoder()
         let buffer = ''
 
+        const processSSELine = (line: string) => {
+          const trimmedLine = line.trim()
+          if (!trimmedLine.startsWith('data: ')) return
+
+          const data = trimmedLine.slice(6)
+          if (data === '[DONE]') return
+
+          try {
+            const parsed = JSON.parse(data)
+
+            // Handle ban
+            if (parsed.type === 'ban' && mountedRef.current) {
+              receivedBan = true
+              setIsBanned(true)
+              setBanExpiresAt(parsed.expires_at || null)
+              // Don't return early - let the stream continue to get the message
+            }
+
+            // Handle warning
+            if (parsed.type === 'warning' && mountedRef.current) {
+              receivedWarning = true
+              setSecurityWarning(parsed.message || 'Suspicious patterns detected.')
+              // Auto-clear warning after 10 seconds
+              setTimeout(() => {
+                if (mountedRef.current) {
+                  setSecurityWarning(null)
+                }
+              }, 10000)
+              // Don't return - continue processing the response
+            }
+
+            // Handle error
+            if (parsed.type === 'error' && mountedRef.current) {
+              console.error('Server error:', parsed.message)
+            }
+
+            // Handle status updates
+            if (parsed.type === 'status' && mountedRef.current) {
+              setThinkingStatus({
+                status: parsed.status || 'generating',
+                message: parsed.message || 'Processing...',
+                details: parsed.details || {},
+              })
+            }
+
+            // Handle content chunks
+            const content = parsed.content || parsed.chunk
+            if (content && mountedRef.current) {
+              fullContent += content
+              setStreamingContent(fullContent)
+              // Clear thinking status when content starts flowing
+              if (fullContent.length > 0) {
+                setThinkingStatus(null)
+              }
+            }
+
+            // Handle citations
+            if (parsed.citations && mountedRef.current) {
+              setMessageCitations((prev) => ({
+                ...prev,
+                [currentMessageIndex + 1]: parsed.citations,
+              }))
+            }
+
+            // Handle compression warning
+            if (parsed.compression_needed && mountedRef.current) {
+              setCompressionNeeded(true)
+              setTimeout(() => {
+                if (mountedRef.current) {
+                  setCompressionNeeded(false)
+                }
+              }, 8000)
+            }
+
+            // Handle token count
+            if (parsed.total_tokens && mountedRef.current) {
+              setTotalTokens(parsed.total_tokens)
+            }
+
+            // Handle done signal
+            if (parsed.done && !streamFinalized) {
+              finalizeStream()
+            }
+          } catch {
+            // Ignore JSON parse errors
+          }
+        }
+
         try {
           while (true) {
             const { done, value } = await reader.read()
 
             if (done) {
+              // Process remaining buffer
               if (buffer.trim()) {
                 processSSELine(buffer)
               }
-              if (fullContent && !streamFinalized) {
+              // Finalize if not already done
+              if (!streamFinalized) {
                 await finalizeStream()
               }
               break
@@ -661,59 +754,6 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
         } finally {
           reader.releaseLock()
         }
-
-        function processSSELine(line: string) {
-          const trimmedLine = line.trim()
-          if (!trimmedLine.startsWith('data: ')) return
-
-          const data = trimmedLine.slice(6)
-          if (data === '[DONE]') {
-            return
-          }
-
-          try {
-            const parsed = JSON.parse(data)
-
-            if (parsed.type === 'status' && mountedRef.current) {
-              setThinkingStatus({
-                status: parsed.status || 'generating',
-                message: parsed.message || 'Processing...',
-                details: parsed.details || {},
-              })
-            }
-
-            const content = parsed.content || parsed.chunk
-            if (content) {
-              fullContent += content
-              if (mountedRef.current) {
-                setStreamingContent(fullContent)
-                setThinkingStatus(null)
-              }
-            }
-
-            if (parsed.citations && mountedRef.current) {
-              setMessageCitations((prev) => ({
-                ...prev,
-                [currentMessageIndex + 1]: parsed.citations,
-              }))
-            }
-
-            if (parsed.compression_needed && mountedRef.current) {
-              setCompressionNeeded(true)
-              setTimeout(() => {
-                if (mountedRef.current) {
-                  setCompressionNeeded(false)
-                }
-              }, 8000)
-            }
-
-            if (parsed.total_tokens && mountedRef.current) {
-              setTotalTokens(parsed.total_tokens)
-            }
-          } catch {
-            // Ignore JSON parse errors
-          }
-        }
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') {
           if (mountedRef.current) {
@@ -723,12 +763,14 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
           return
         }
 
-        console.error('Error:', err)
+        console.error('Stream error:', err)
 
         if (mountedRef.current) {
           const errorMessage = err instanceof Error ? err.message : 'Unknown error'
           setError(`Failed to get response: ${errorMessage}`)
           setThinkingStatus({ status: 'error', message: 'Something went wrong', details: {} })
+          
+          // Add error message to chat
           setMessages((prev) => [
             ...prev,
             { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' },
@@ -736,12 +778,14 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
           setStreamingContent('')
           setIsLoading(false)
           
+          // Still try to generate title
           if (isFirstMessage && effectiveSessionId) {
             await generateTitleForSession(effectiveSessionId, trimmedMessage, '')
           } else {
             await loadUserSessions()
           }
 
+          // Clear error after 5 seconds
           setTimeout(() => {
             if (mountedRef.current) {
               setError(null)
@@ -757,6 +801,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
       userName,
       userProfile,
       messages.length,
+      isBanned,
       createNewSession,
       generateTitleForSession,
       loadUserSessions,
@@ -764,6 +809,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     ]
   )
 
+  // Form submit handler
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault()
@@ -775,6 +821,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     [input, sendMessage]
   )
 
+  // Utility functions
   const clearError = useCallback(() => setError(null), [])
 
   const cancelStream = useCallback(() => {
@@ -784,7 +831,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     setStreamingContent('')
   }, [])
 
-  // Cleanup on unmount
+  // Effects
   useEffect(() => {
     mountedRef.current = true
     return () => {
@@ -793,12 +840,10 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     }
   }, [])
 
-  // Initialize session on mount
   useEffect(() => {
     initializeSession()
   }, [initializeSession])
 
-  // Load user data when userId changes
   useEffect(() => {
     if (userId) {
       effectiveUserIdRef.current = null
@@ -827,8 +872,10 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     thinkingStatus,
     compressionNeeded,
     totalTokens,
+    isBanned,
+    banExpiresAt,
+    securityWarning,
     hasMessages: messages.length > 0 || !!streamingContent,
-    // New: expose if we're in a pending new session state
     isPendingNewSession: isPendingNewSession.current,
 
     // Actions
