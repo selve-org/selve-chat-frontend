@@ -1,6 +1,7 @@
 'use client'
 
 import { Sparkles, MessageSquare, Brain, Palette } from 'lucide-react'
+import Image from 'next/image'
 
 interface FeatureCardProps {
   title: string
@@ -13,9 +14,10 @@ function FeatureCard({ title, description, icon, gradient }: FeatureCardProps) {
   return (
     <div
       className={`
-        group relative overflow-hidden rounded-xl border border-zinc-800 p-5
+        group relative overflow-hidden rounded-xl border border-zinc-800 p-3 sm:p-4
         bg-gradient-to-br ${gradient}
         transition-all duration-300 hover:scale-[1.02] hover:border-zinc-700
+        min-w-0
       `}
     >
       {/* Subtle glow effect */}
@@ -25,8 +27,8 @@ function FeatureCard({ title, description, icon, gradient }: FeatureCardProps) {
         <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 text-white">
           {icon}
         </div>
-        <h3 className="mb-1 font-semibold text-white">{title}</h3>
-        <p className="text-sm text-zinc-400">{description}</p>
+        <h3 className="mb-1 text-sm sm:text-base font-semibold text-white">{title}</h3>
+        <p className="text-xs sm:text-sm text-zinc-400 line-clamp-2">{description}</p>
       </div>
     </div>
   )
@@ -73,38 +75,32 @@ const SUGGESTIONS = [
 
 export default function WelcomeScreen({ onSuggestionClick, userName }: WelcomeScreenProps) {
   return (
-    <div className="flex h-full flex-col items-center justify-center overflow-y-auto p-8">
-      <div className="w-full max-w-4xl space-y-8">
+    <div className="flex h-full min-h-0 flex-col items-center justify-center overflow-hidden p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-5xl space-y-5 sm:space-y-6">
         {/* Welcome Header */}
         <div className="text-center">
-          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600">
-            <span className="text-3xl font-bold text-white">S</span>
+          <div className="mb-4 inline-flex h-20 w-20 items-center justify-center animate-spin-slow">
+            <Image
+              src="/logo/selve-chat-logo.png"
+              alt="SELVE Logo"
+              width={80}
+              height={80}
+              priority
+              className="pointer-events-none"
+            />
           </div>
-          <h1 className="mb-2 text-3xl font-semibold text-zinc-900 dark:text-white">
+          <h1 className="mb-2 text-2xl sm:text-3xl font-semibold text-zinc-900 dark:text-white">
             {userName ? `Welcome back, ${userName}` : 'Welcome to SELVE Chat'}
           </h1>
-          <p className="text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm sm:text-base text-zinc-500 dark:text-zinc-400 px-4">
             Your AI-powered personality guide. Ask me anything about your SELVE assessment.
           </p>
         </div>
 
-        {/* Feature Cards */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Feature Cards - Always in one row */}
+        <div className="grid grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
           {FEATURE_CARDS.map((card) => (
             <FeatureCard key={card.title} {...card} />
-          ))}
-        </div>
-
-        {/* Suggestion Chips */}
-        <div className="flex flex-wrap justify-center gap-2">
-          {SUGGESTIONS.map((suggestion) => (
-            <button
-              key={suggestion}
-              onClick={() => onSuggestionClick(suggestion)}
-              className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-700 transition-colors hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-zinc-600 dark:hover:bg-zinc-700"
-            >
-              {suggestion}
-            </button>
           ))}
         </div>
       </div>

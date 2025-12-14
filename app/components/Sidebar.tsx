@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { Search, Plus, MessageSquare, Trash2 } from 'lucide-react'
 import { SelveLogo } from './SelveLogo'
 import { AnimatedHamburgerIcon } from './AnimatedHamburgerIcon'
+import UserMenu from './UserMenu'
 
 interface Session {
   id: string
@@ -118,7 +119,7 @@ export default function Sidebar({
           <a
             href={homeUrl}
             className="rounded-lg p-1 transition-colors hover:bg-[#1a1917]"
-            aria-label="SELVE homepage"
+            aria-label="SELVE-Chat homepage"
           >
             <SelveLogo />
           </a>
@@ -215,25 +216,12 @@ export default function Sidebar({
 
         {/* Footer */}
         <div className="border-t border-[#1f1e1c] p-4">
-          <div className="flex items-center gap-3 rounded-lg bg-[#151412] px-3 py-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#b88dff] via-[#7f5af0] to-[#5f3bd8] text-sm font-semibold text-white">
-              {(userName?.slice(0, 2) || (isSignedIn ? 'SE' : 'GU')).toUpperCase()}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-semibold text-white truncate">{userName || (isSignedIn ? 'SELVE User' : 'Guest')}</div>
-              <div className="text-xs text-zinc-500 truncate">
-                {isSignedIn ? (userPlan || 'Pro plan') : 'Sign in for full access'}
-              </div>
-            </div>
-            {!isSignedIn && signInUrl && (
-              <a
-                href={signInUrl}
-                className="shrink-0 rounded-md border border-[#2c261f] px-3 py-2 text-[11px] font-semibold text-white transition hover:border-[#de6b35] hover:bg-[#1f1a15]"
-              >
-                Sign in
-              </a>
-            )}
-          </div>
+          <UserMenu
+            userName={userName}
+            userPlan={userPlan}
+            isSignedIn={isSignedIn}
+            signInUrl={signInUrl}
+          />
         </div>
       </motion.aside>
 

@@ -3,6 +3,7 @@ export { useTypewriter, useStreamingTypewriter } from './useTypewriter'
 export { useRetry } from './useRetry'
 export type { RetryState } from './useRetry'
 export { useChat } from './useChat'
+export { usePlaceholderRotation } from './usePlaceholderRotation'
 export type {
   Message,
   Session,

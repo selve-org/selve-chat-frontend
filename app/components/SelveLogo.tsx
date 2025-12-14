@@ -4,7 +4,7 @@ export const SelveLogo = ({ className }: { className?: string }) => {
   return (
     <div className={`flex items-center space-x-2 select-none ${className}`}>
       <Image
-        src="/logo/selve-logo.png"
+        src="/logo/selve-chat-logo.png"
         alt="SELVE Logo"
         width={40}
         height={40}

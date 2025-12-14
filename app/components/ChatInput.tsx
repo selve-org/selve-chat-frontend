@@ -1,7 +1,8 @@
 'use client'
 
-import { ArrowUp, Paperclip } from 'lucide-react'
+import { ArrowUp } from 'lucide-react'
 import { FormEvent, KeyboardEvent, useRef, useEffect } from 'react'
+import { usePlaceholderRotation } from '../hooks/usePlaceholderRotation'
 
 interface ChatInputProps {
   value: string
@@ -27,6 +28,7 @@ export default function ChatInput({
   onSuggestionClick,
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const { currentPlaceholder, nextPlaceholder, isTransitioning } = usePlaceholderRotation(3000)
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -72,30 +74,49 @@ export default function ChatInput({
 
         {/* Input area */}
         <form onSubmit={onSubmit} className="relative">
-          <div className="flex items-end gap-2 rounded-2xl border border-[#24221f] bg-[#1a1917] p-2 focus-within:border-[#9d7bff] focus-within:ring-2 focus-within:ring-[#9d7bff]/25">
-            {/* Attachment button */}
-            <button
-              type="button"
-              className="shrink-0 rounded-lg p-2 text-zinc-500 transition-colors hover:bg-[#23211e] hover:text-zinc-200"
-              aria-label="Attach file"
-            >
-              <Paperclip className="h-5 w-5" />
-            </button>
-
+          <div className="flex items-end gap-3 rounded-2xl border border-[#24221f] bg-[#1a1917] px-4 py-2 focus-within:border-[#9d7bff] focus-within:ring-2 focus-within:ring-[#9d7bff]/25">
             {/* Textarea */}
-            <textarea
-              ref={textareaRef}
-              value={value}
-              onChange={(e) => {
-                onChange(e.target.value)
-                handleInput()
-              }}
-              onKeyDown={handleKeyDown}
-              placeholder={isBanned ? 'SELVE is unavailable' : placeholder}
-              disabled={isLoading || isBanned}
-              rows={1}
-              className="max-h-[200px] min-h-[44px] flex-1 resize-none bg-transparent py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none disabled:text-zinc-400"
-            />
+            <div className="relative flex-1">
+              <textarea
+                ref={textareaRef}
+                value={value}
+                onChange={(e) => {
+                  onChange(e.target.value)
+                  handleInput()
+                }}
+                onKeyDown={handleKeyDown}
+                placeholder=" "
+                disabled={isLoading || isBanned}
+                rows={1}
+                className="max-h-[200px] min-h-[44px] w-full resize-none bg-transparent py-3 pr-2 text-sm leading-5 text-zinc-100 placeholder-transparent focus:outline-none disabled:text-zinc-400"
+              />
+              {/* Animated placeholder overlay */}
+              {!value && !isBanned && (
+                <div className="pointer-events-none absolute left-0 right-0 top-3 overflow-hidden pr-2">
+                  {/* Current text sliding down */}
+                  <span
+                    key={`current-${currentPlaceholder}`}
+                    className={`absolute text-sm leading-5 text-zinc-500 ${isTransitioning ? 'animate-slide-down' : ''}`}
+                  >
+                    {currentPlaceholder}
+                  </span>
+                  {/* Next text sliding up */}
+                  {isTransitioning && (
+                    <span
+                      key={`next-${nextPlaceholder}`}
+                      className="absolute text-sm leading-5 text-zinc-500 animate-slide-up"
+                    >
+                      {nextPlaceholder}
+                    </span>
+                  )}
+                </div>
+              )}
+              {!value && isBanned && (
+                <div className="pointer-events-none absolute left-0 right-0 top-3 pr-2">
+                  <span className="text-sm leading-5 text-zinc-500">SELVE is unavailable</span>
+                </div>
+              )}
+            </div>
 
             {/* Submit button */}
             <button

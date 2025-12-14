@@ -157,12 +157,10 @@ export default function ChatPage() {
       <main className="flex flex-1 flex-col">
         <TopBar
           onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          onExport={handleExport}
-          onShare={handleShare}
           title="SELVE Chat"
         />
 
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex flex-1 flex-col overflow-hidden min-h-0">
           {hasMessages ? (
             <div className="flex-1 overflow-y-auto">
               <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-10">
@@ -182,10 +180,12 @@ export default function ChatPage() {
               </div>
             </div>
           ) : (
-            <WelcomeScreen
-              onSuggestionClick={handleSuggestionClick}
-              userName={user?.firstName || user?.username || undefined}
-            />
+            <div className="flex flex-1 flex-col min-h-0">
+              <WelcomeScreen
+                onSuggestionClick={handleSuggestionClick}
+                userName={user?.firstName || user?.username || undefined}
+              />
+            </div>
           )}
 
           {/* Security warning banner */}

@@ -1,0 +1,24 @@
+{
+  "name": "SELVE Chat",
+  "short_name": "SELVE Chat",
+  "description": "Your personality framework assistant powered by SELVE",
+  "icons": [
+    {
+      "src": "/logo/selve-chat-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo/selve-chat-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "theme_color": "#de6b35",
+  "background_color": "#0f0f0e",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/"
+}
