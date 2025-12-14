@@ -1,6 +1,7 @@
 'use client'
 
 import { Menu } from 'lucide-react'
+import Image from 'next/image'
 
 interface TopBarProps {
   onMenuClick: () => void
@@ -22,9 +23,16 @@ export default function TopBar({
         >
           <Menu className="h-5 w-5" />
         </button>
-        <h1 className="ml-14 text-lg font-semibold text-white">
-          {title}
-        </h1>
+        <div className="ml-14 flex items-center">
+          <Image
+            src="/logo/selve-chat-text-logo.png"
+            alt="SELVE Chat"
+            width={120}
+            height={24}
+            className="h-6 w-auto"
+            priority
+          />
+        </div>
       </div>
     </header>
   )

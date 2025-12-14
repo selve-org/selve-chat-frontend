@@ -151,6 +151,7 @@ export default function ChatPage() {
         userPlan={userAccount?.subscription_plan || userProfile?.subscriptionPlan}
         isSignedIn={!!user}
         signInUrl={signInUrl}
+        currentMessages={messages}
       />
 
       {/* Main content area */}

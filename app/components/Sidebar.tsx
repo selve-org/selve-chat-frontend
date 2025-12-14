@@ -6,12 +6,18 @@ import { Search, Plus, MessageSquare, Trash2 } from 'lucide-react'
 import { SelveLogo } from './SelveLogo'
 import { AnimatedHamburgerIcon } from './AnimatedHamburgerIcon'
 import UserMenu from './UserMenu'
+import SearchModal from './SearchModal'
 
 interface Session {
   id: string
   title: string
   createdAt: string
   lastMessageAt: string
+}
+
+interface Message {
+  role: 'user' | 'assistant'
+  content: string
 }
 
 interface SidebarProps {
@@ -26,6 +32,7 @@ interface SidebarProps {
   userPlan?: string
   isSignedIn?: boolean
   signInUrl?: string
+  currentMessages?: Message[] // Add current session messages for search
 }
 
 export default function Sidebar({
@@ -40,8 +47,9 @@ export default function Sidebar({
   userPlan,
   isSignedIn = false,
   signInUrl,
+  currentMessages = [],
 }: SidebarProps) {
-  const [searchQuery, setSearchQuery] = React.useState('')
+  const [isSearchOpen, setIsSearchOpen] = React.useState(false)
   const homeUrl = process.env.NEXT_PUBLIC_CHATBOT_URL || '/'
 
   const sidebarVariants = {
@@ -56,10 +64,6 @@ export default function Sidebar({
       transition: { duration: 0.25, ease: 'easeIn' },
     },
   }
-
-  const filteredSessions = sessions.filter(session =>
-    session.title.toLowerCase().includes(searchQuery.toLowerCase())
-  )
 
   // Group sessions by date
   const groupedSessions = React.useMemo(() => {
@@ -79,7 +83,7 @@ export default function Sidebar({
       { label: 'Older', sessions: [] },
     ]
 
-    filteredSessions.forEach(session => {
+    sessions.forEach(session => {
       const sessionDate = new Date(session.lastMessageAt)
       sessionDate.setHours(0, 0, 0, 0)
 
@@ -95,7 +99,7 @@ export default function Sidebar({
     })
 
     return groups.filter(g => g.sessions.length > 0)
-  }, [filteredSessions])
+  }, [sessions])
 
   return (
     <>
@@ -132,29 +136,25 @@ export default function Sidebar({
           </button>
         </div>
 
-        {/* New Chat Button */}
-        <div className="p-3">
+        {/* New Chat Button and Search - Row Layout */}
+        <div className="flex items-center gap-2 p-3">
+          {/* New Chat Button - Takes more space */}
           <button
             onClick={onNewChat}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#2c261f] bg-[#1a1917] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:border-[#3a3127] hover:bg-[#22201d]"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-[#2c261f] bg-[#1a1917] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:border-[#3a3127] hover:bg-[#22201d]"
           >
             <Plus className="h-4 w-4" />
             <span>New Chat</span>
           </button>
-        </div>
-
-        {/* Search */}
-        <div className="px-3 pb-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search chats..."
-              className="w-full rounded-lg border border-[#1f1e1c] bg-[#1a1917] py-2 pl-9 pr-3 text-sm text-white placeholder-zinc-500 focus:border-[#de6b35] focus:outline-none"
-            />
-          </div>
+          
+          {/* Search Icon - No background */}
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            className="shrink-0 p-2 text-zinc-400 transition-colors hover:text-zinc-200"
+            aria-label="Search chats"
+          >
+            <Search className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Sessions List */}
@@ -237,6 +237,16 @@ export default function Sidebar({
       >
         <AnimatedHamburgerIcon isOpen={isOpen} />
       </motion.button>
+
+      {/* Search Modal */}
+      <SearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        sessions={sessions}
+        onSessionSelect={onSessionSelect}
+        currentSessionMessages={currentMessages}
+        currentSessionId={activeSessionId}
+      />
     </>
   )
 }

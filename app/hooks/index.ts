@@ -4,6 +4,7 @@ export { useRetry } from './useRetry'
 export type { RetryState } from './useRetry'
 export { useChat } from './useChat'
 export { usePlaceholderRotation } from './usePlaceholderRotation'
+export { useDebounce } from './useDebounce'
 export type {
   Message,
   Session,

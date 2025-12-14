@@ -88,11 +88,11 @@ export default function ChatInput({
                 placeholder=" "
                 disabled={isLoading || isBanned}
                 rows={1}
-                className="max-h-[200px] min-h-[44px] w-full resize-none bg-transparent py-3 pr-2 text-sm leading-5 text-zinc-100 placeholder-transparent focus:outline-none disabled:text-zinc-400"
+                className="max-h-[200px] min-h-[44px] w-full resize-none bg-transparent py-3 text-sm leading-5 text-zinc-100 placeholder-transparent focus:outline-none disabled:text-zinc-400"
               />
               {/* Animated placeholder overlay */}
               {!value && !isBanned && (
-                <div className="pointer-events-none absolute left-0 right-0 top-3 overflow-hidden pr-2">
+                <div className="pointer-events-none absolute inset-0 flex items-center overflow-hidden">
                   {/* Current text sliding down */}
                   <span
                     key={`current-${currentPlaceholder}`}
@@ -112,7 +112,7 @@ export default function ChatInput({
                 </div>
               )}
               {!value && isBanned && (
-                <div className="pointer-events-none absolute left-0 right-0 top-3 pr-2">
+                <div className="pointer-events-none absolute inset-0 flex items-center">
                   <span className="text-sm leading-5 text-zinc-500">SELVE is unavailable</span>
                 </div>
               )}
