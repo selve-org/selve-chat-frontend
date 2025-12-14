@@ -18,6 +18,7 @@ export default function UserMenu({ userName, userPlan, isSignedIn, signInUrl }: 
   const { theme, setTheme } = useTheme()
   const [isOpen, setIsOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [assessmentSessionId, setAssessmentSessionId] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
   const mainAppUrl = process.env.NEXT_PUBLIC_MAIN_APP_URL || 'http://localhost:3000'
@@ -25,6 +26,35 @@ export default function UserMenu({ userName, userPlan, isSignedIn, signInUrl }: 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Fetch user's assessment session ID
+  useEffect(() => {
+    async function fetchAssessmentSession() {
+      if (!user?.id) return
+      
+      try {
+        // Use main app backend URL to fetch user profile
+        const mainAppBackendUrl = process.env.NEXT_PUBLIC_MAIN_APP_API_URL || 'http://localhost:8000'
+        const response = await fetch(`${mainAppBackendUrl}/api/users/profile`, {
+          headers: {
+            'X-User-ID': user.id,
+          },
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          if (data.currentSessionId) {
+            setAssessmentSessionId(data.currentSessionId)
+          }
+        }
+      } catch (error) {
+        // Silently fail and default to profile link
+        // This can happen due to CORS or network issues
+      }
+    }
+    
+    fetchAssessmentSession()
+  }, [user?.id])
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -100,7 +130,7 @@ export default function UserMenu({ userName, userPlan, isSignedIn, signInUrl }: 
           />
 
           {/* Menu */}
-          <div className="absolute bottom-full left-0 right-0 mb-2 w-full rounded-xl border border-[#2c261f] bg-[#1a1917] shadow-2xl shadow-black/40 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="absolute bottom-full left-0 right-0 mb-2 w-full min-w-[260px] rounded-xl border border-[#2c261f] bg-[#1a1917] shadow-2xl shadow-black/40 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
             {/* Theme Settings */}
             <div className="border-b border-[#2c261f] p-3">
               <p className="mb-2 px-2 text-xs font-medium text-zinc-400">Appearance</p>
@@ -112,14 +142,14 @@ export default function UserMenu({ userName, userPlan, isSignedIn, signInUrl }: 
                     <button
                       key={option.id}
                       onClick={() => setTheme(option.id)}
-                      className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-all ${
+                      className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-1.5 py-1.5 text-xs font-medium transition-all ${
                         isActive
                           ? 'bg-[#de6b35] text-white shadow-sm'
                           : 'text-zinc-400 hover:bg-[#1a1917] hover:text-white'
                       }`}
                     >
-                      <Icon className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">{option.label}</span>
+                      <Icon className="h-3.5 w-3.5 shrink-0" />
+                      <span className="hidden min-[280px]:inline truncate">{option.label}</span>
                     </button>
                   )
                 })}
@@ -130,7 +160,10 @@ export default function UserMenu({ userName, userPlan, isSignedIn, signInUrl }: 
             <div className="py-1">
               {/* My Assessment Results */}
               <a
-                href={`${mainAppUrl}/profile`}
+                href={assessmentSessionId 
+                  ? `${mainAppUrl}/results/${assessmentSessionId}`
+                  : `${mainAppUrl}/profile`
+                }
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setIsOpen(false)}

@@ -14,6 +14,7 @@ interface ChatInputProps {
   placeholder?: string
   suggestions?: string[]
   onSuggestionClick?: (suggestion: string) => void
+  hasMessages?: boolean
 }
 
 export default function ChatInput({
@@ -26,9 +27,13 @@ export default function ChatInput({
   placeholder = 'Ask me anything about SELVE...',
   suggestions = [],
   onSuggestionClick,
+  hasMessages = false,
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { currentPlaceholder, nextPlaceholder, isTransitioning } = usePlaceholderRotation(3000)
+  
+  // Static placeholder after first message
+  const staticPlaceholder = "What's on your mind?"
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -90,8 +95,8 @@ export default function ChatInput({
                 rows={1}
                 className="max-h-[200px] min-h-[44px] w-full resize-none bg-transparent py-3 text-sm leading-5 text-zinc-100 placeholder-transparent focus:outline-none disabled:text-zinc-400"
               />
-              {/* Animated placeholder overlay */}
-              {!value && !isBanned && (
+              {/* Animated placeholder overlay (welcome screen only) */}
+              {!value && !isBanned && !hasMessages && (
                 <div className="pointer-events-none absolute inset-0 flex items-center overflow-hidden">
                   {/* Current text sliding down */}
                   <span
@@ -109,6 +114,14 @@ export default function ChatInput({
                       {nextPlaceholder}
                     </span>
                   )}
+                </div>
+              )}
+              {/* Static placeholder (after first message) */}
+              {!value && !isBanned && hasMessages && (
+                <div className="pointer-events-none absolute inset-0 flex items-center">
+                  <span className="text-sm leading-5 text-zinc-500">
+                    {staticPlaceholder}
+                  </span>
                 </div>
               )}
               {!value && isBanned && (

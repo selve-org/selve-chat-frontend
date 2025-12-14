@@ -207,6 +207,7 @@ export default function ChatPage() {
             isBanned={isBanned}
             banExpiresAt={banExpiresAt}
             placeholder="Ask me anything about SELVE..."
+            hasMessages={hasMessages}
           />
         </div>
       </main>
