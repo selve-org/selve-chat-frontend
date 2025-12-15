@@ -23,7 +23,7 @@ export default function TopBar({
         >
           <Menu className="h-5 w-5" />
         </button>
-        <div className="ml-14 flex items-center">
+        <div className="flex items-center lg:ml-14">
           <Image
             src="/logo/selve-chat-text-logo.png"
             alt="SELVE Chat"
