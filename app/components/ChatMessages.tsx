@@ -22,8 +22,20 @@ interface ChatMessagesProps {
   onRegenerate?: (messageId: string) => void
   /** Callback when user provides feedback */
   onFeedback?: (messageId: string, type: 'helpful' | 'not_helpful') => void
+  /** Callback when user edits a message */
+  onEditMessage?: (messageIndex: number) => void
   /** ID of message currently being regenerated */
   regeneratingMessageId?: string
+  /** Index of message being edited */
+  editingMessageIndex?: number | null
+  /** Content being edited */
+  editingContent?: string
+  /** Callback when editing content changes */
+  onEditingContentChange?: (content: string) => void
+  /** Callback when save edit is clicked */
+  onSaveEdit?: () => void
+  /** Callback when cancel edit is clicked */
+  onCancelEdit?: () => void
 }
 
 export default function ChatMessages({
@@ -34,7 +46,13 @@ export default function ChatMessages({
   enableTypewriter = true,
   onRegenerate,
   onFeedback,
+  onEditMessage,
   regeneratingMessageId,
+  editingMessageIndex,
+  editingContent,
+  onEditingContentChange,
+  onSaveEdit,
+  onCancelEdit,
 }: ChatMessagesProps) {
   const { displayedContent, isTyping } = useStreamingTypewriter(streamingContent, {
     baseSpeed: 30,
@@ -52,17 +70,46 @@ export default function ChatMessages({
         <div key={message.id || index} className="group">
           {message.role === 'user' ? (
             <div className="flex justify-end">
-              <div className="max-w-[70%] space-y-1">
-                <div className="rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl rounded-br-sm bg-gradient-to-br from-[#b88dff] via-[#9d7bff] to-[#7f5af0] px-4 py-2.5 text-sm leading-relaxed text-white shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
-                  <p className="whitespace-pre-wrap">{message.content}</p>
-                </div>
-                {/* User message actions - show on hover */}
-                <div className="flex justify-end">
-                  <UserMessageActions
-                    content={message.content}
-                    onEdit={() => console.log('Edit clicked for user message')}
-                  />
-                </div>
+              <div className={`${editingMessageIndex === index ? 'w-full' : 'max-w-[70%]'} space-y-1`}>
+                {editingMessageIndex === index ? (
+                  // Edit mode
+                  <div className="w-full space-y-2">
+                    <textarea
+                      value={editingContent}
+                      onChange={(e) => onEditingContentChange?.(e.target.value)}
+                      className="w-full min-h-[100px] rounded-2xl bg-[#1a1a1a] border border-zinc-700 px-4 py-3 text-sm text-white focus:border-purple-500 focus:outline-none resize-y"
+                      autoFocus
+                    />
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={onCancelEdit}
+                        className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={onSaveEdit}
+                        className="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  // View mode
+                  <>
+                    <div className="rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl rounded-br-sm bg-gradient-to-br from-[#b88dff] via-[#9d7bff] to-[#7f5af0] px-4 py-2.5 text-sm leading-relaxed text-white shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
+                      <p className="whitespace-pre-wrap">{message.content}</p>
+                    </div>
+                    {/* User message actions - show on hover */}
+                    <div className="flex justify-end">
+                      <UserMessageActions
+                        content={message.content}
+                        onEdit={onEditMessage ? () => onEditMessage(index) : undefined}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           ) : (
