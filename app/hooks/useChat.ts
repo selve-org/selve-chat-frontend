@@ -7,6 +7,7 @@ import { Citation } from '../components/SourceCitations'
 export interface Message {
   role: 'user' | 'assistant'
   content: string
+  id?: string
 }
 
 export interface Session {

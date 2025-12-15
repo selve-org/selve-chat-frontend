@@ -164,12 +164,20 @@ export default function ChatPage() {
         <div className="flex flex-1 flex-col overflow-hidden min-h-0">
           {hasMessages ? (
             <div className="flex-1 overflow-y-auto">
-              <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-10">
+              <div className="mx-auto w-full max-w-4xl px-2 sm:px-8 md:px-12 lg:px-14">
                 <ChatMessages
                   messages={messages}
                   streamingContent={streamingContent}
                   isLoading={isLoading}
                   thinkingStatus={thinkingStatus}
+                  onRegenerate={(messageId) => {
+                    console.log('Regenerate clicked for message:', messageId)
+                    // TODO: Implement regenerate functionality
+                  }}
+                  onFeedback={(messageId, type) => {
+                    console.log('Feedback:', type, 'for message:', messageId)
+                    // TODO: Implement feedback API call
+                  }}
                 />
                 {/* Source citations for the last message */}
                 {messages.length > 0 && messageCitations[messages.length - 1] && (
