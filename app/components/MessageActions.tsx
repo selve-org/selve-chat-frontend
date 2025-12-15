@@ -154,7 +154,18 @@ export function UserMessageActions({ content, onEdit }: UserMessageActionsProps)
   }
 
   return (
-    <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+    <div className={`flex items-center gap-1 transition-opacity ${copied ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+      {/* Edit */}
+      {onEdit && (
+        <button
+          onClick={onEdit}
+          title="Edit message"
+          className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
+      )}
+
       {/* Copy */}
       <button
         onClick={handleCopy}
@@ -167,17 +178,6 @@ export function UserMessageActions({ content, onEdit }: UserMessageActionsProps)
           <Copy className="h-3.5 w-3.5" />
         )}
       </button>
-
-      {/* Edit */}
-      {onEdit && (
-        <button
-          onClick={onEdit}
-          title="Edit message"
-          className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
-        >
-          <Pencil className="h-3.5 w-3.5" />
-        </button>
-      )}
     </div>
   )
 }
