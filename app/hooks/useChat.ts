@@ -98,11 +98,14 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
   const [thinkingStatus, setThinkingStatus] = useState<ThinkingStatus | null>(null)
   const [compressionNeeded, setCompressionNeeded] = useState(false)
   const [totalTokens, setTotalTokens] = useState<number | null>(null)
-  
+
   // Security state
   const [isBanned, setIsBanned] = useState(false)
   const [banExpiresAt, setBanExpiresAt] = useState<string | null>(null)
   const [securityWarning, setSecurityWarning] = useState<string | null>(null)
+
+  // Trace ID tracking for feedback (maps message index to Langfuse trace ID)
+  const [messageTraceIds, setMessageTraceIds] = useState<Record<string, string>>({})
 
   // Refs
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -110,6 +113,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
   const effectiveUserIdRef = useRef<string | null>(null)
   const profileLoadedRef = useRef<Promise<void> | null>(null)
   const isPendingNewSession = useRef(false)
+  const currentTraceIdRef = useRef<string | null>(null) // Capture trace ID during streaming
 
   // Get effective user ID (real or anonymous)
   const getEffectiveUserId = useCallback((): string | null => {
@@ -287,6 +291,14 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
       if (fetchError) {
         console.error('[useChat] Error restoring session:', fetchError)
         return null
+      }
+
+      // Filter inactive messages from restored session
+      if (data?.messages) {
+        data.messages = data.messages.filter((msg: any) => {
+          // Keep active messages and messages without isActive field (backward compat)
+          return msg.isActive !== false
+        })
       }
 
       return isValidSessionWithMessages(data) ? data : null
@@ -522,7 +534,14 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
 
   // Main send message function
   const sendMessage = useCallback(
-    async (userMessage: string) => {
+    async (
+      userMessage: string,
+      regenerationContext?: {
+        regenerationType?: 'regenerate' | 'edit'
+        parentMessageId?: string
+        groupId?: string
+      }
+    ) => {
       const trimmedMessage = userMessage.trim()
       if (!trimmedMessage) return
 
@@ -596,9 +615,25 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
 
         // Only add assistant message if we have content
         if (content.trim()) {
-          setMessages((prev) => [...prev, { role: 'assistant', content }])
+          setMessages((prev) => {
+            const updated = [...prev, { role: 'assistant', content }]
+
+            // Associate trace ID with the new assistant message
+            if (currentTraceIdRef.current && updated.length > 0) {
+              const messageIndex = updated.length - 1
+              setMessageTraceIds((prevIds) => ({
+                ...prevIds,
+                [messageIndex]: currentTraceIdRef.current!,
+              }))
+            }
+
+            return updated
+          })
         }
-        
+
+        // Clear trace ID ref for next message
+        currentTraceIdRef.current = null
+
         setStreamingContent('')
         setThinkingStatus(null)
         setIsLoading(false)
@@ -612,18 +647,27 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
       }
 
       try {
+        const requestBody: any = {
+          message: trimmedMessage,
+          session_id: effectiveSessionId,
+          clerk_user_id: userId || null,
+          user_name: userName || null,
+          selve_scores: selveScores,
+          assessment_url: assessmentUrl,
+          stream: true,
+        }
+
+        // Add regeneration context if provided
+        if (regenerationContext?.regenerationType) {
+          requestBody.regeneration_type = regenerationContext.regenerationType
+          requestBody.parent_message_id = regenerationContext.parentMessageId
+          requestBody.group_id = regenerationContext.groupId
+        }
+
         const response = await fetch(`${API_URL}/api/chat/stream`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: trimmedMessage,
-            session_id: effectiveSessionId,
-            clerk_user_id: userId || null,
-            user_name: userName || null,
-            selve_scores: selveScores,
-            assessment_url: assessmentUrl,
-            stream: true,
-          }),
+          body: JSON.stringify(requestBody),
           signal: abortControllerRef.current.signal,
         })
 
@@ -674,6 +718,11 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
             // Handle error
             if (parsed.type === 'error' && mountedRef.current) {
               console.error('Server error:', parsed.message)
+            }
+
+            // Handle trace ID for feedback tracking
+            if (parsed.type === 'trace_id' && parsed.trace_id && mountedRef.current) {
+              currentTraceIdRef.current = parsed.trace_id
             }
 
             // Handle status updates
