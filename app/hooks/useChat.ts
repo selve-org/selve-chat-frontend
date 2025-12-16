@@ -644,6 +644,19 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
         } else {
           await loadUserSessions()
         }
+
+        // Refresh session to get real message IDs (for feedback functionality)
+        if (effectiveSessionId) {
+          try {
+            const session = await restoreSession(effectiveSessionId)
+            if (session?.messages) {
+              // Update messages with their database IDs
+              setMessages(session.messages)
+            }
+          } catch (err) {
+            console.warn('Failed to refresh messages with IDs:', err)
+          }
+        }
       }
 
       try {
@@ -723,6 +736,21 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
             // Handle trace ID for feedback tracking
             if (parsed.type === 'trace_id' && parsed.trace_id && mountedRef.current) {
               currentTraceIdRef.current = parsed.trace_id
+            }
+
+            // Handle user message ID (update the last user message with real ID)
+            if (parsed.type === 'user_message_id' && parsed.message_id && mountedRef.current) {
+              setMessages((prev) => {
+                const updated = [...prev]
+                // Find the last user message and update its ID
+                for (let i = updated.length - 1; i >= 0; i--) {
+                  if (updated[i].role === 'user' && !updated[i].id) {
+                    updated[i] = { ...updated[i], id: parsed.message_id }
+                    break
+                  }
+                }
+                return updated
+              })
             }
 
             // Handle status updates
