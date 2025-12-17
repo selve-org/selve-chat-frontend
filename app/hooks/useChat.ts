@@ -646,16 +646,33 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
         }
 
         // Refresh session to get real message IDs (for feedback functionality)
+        // Use setTimeout to allow backend background task to complete saving
         if (effectiveSessionId) {
-          try {
-            const session = await restoreSession(effectiveSessionId)
-            if (session?.messages) {
-              // Update messages with their database IDs
-              setMessages(session.messages)
+          setTimeout(async () => {
+            try {
+              const session = await restoreSession(effectiveSessionId)
+              if (session?.messages && mountedRef.current) {
+                // Merge database IDs into existing messages instead of replacing
+                setMessages((prevMessages) => {
+                  // If DB has same number of messages, update with IDs
+                  if (session.messages.length === prevMessages.length) {
+                    return prevMessages.map((msg, idx) => ({
+                      ...msg,
+                      id: session.messages[idx]?.id || msg.id,
+                    }))
+                  }
+                  // If DB has more messages (shouldn't happen), use DB version
+                  if (session.messages.length > prevMessages.length) {
+                    return session.messages
+                  }
+                  // If DB has fewer (background task not done), keep current state
+                  return prevMessages
+                })
+              }
+            } catch (err) {
+              console.warn('Failed to refresh messages with IDs:', err)
             }
-          } catch (err) {
-            console.warn('Failed to refresh messages with IDs:', err)
-          }
+          }, 500) // 500ms delay to let background task complete
         }
       }
 

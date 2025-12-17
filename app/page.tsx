@@ -28,6 +28,7 @@ export default function ChatPage() {
   const [regeneratingMessageId, setRegeneratingMessageId] = useState<string | null>(null)
   const [localMessages, setLocalMessages] = useState<any[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
   const SIGNIN_DISMISSED_KEY = 'selve_signin_prompt_dismissed'
 
   const mainAppBase =
@@ -71,8 +72,14 @@ export default function ChatPage() {
 
   // Scroll to bottom when messages change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, streamingContent])
+    // Use requestAnimationFrame to ensure DOM has updated before scrolling
+    requestAnimationFrame(() => {
+      const container = messagesContainerRef.current
+      if (container) {
+        container.scrollTop = container.scrollHeight
+      }
+    })
+  }, [messages, streamingContent, localMessages])
 
   // Sync local messages with messages from useChat
   useEffect(() => {
@@ -275,8 +282,8 @@ export default function ChatPage() {
 
         <div className="flex flex-1 flex-col overflow-hidden min-h-0">
           {hasMessages ? (
-            <div className="flex-1 overflow-y-auto">
-              <div className="mx-auto w-full max-w-4xl px-2 sm:px-8 md:px-12 lg:px-14">
+            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto">
+              <div className="mx-auto w-full max-w-4xl px-2 sm:px-8 md:px-12 lg:px-14 pb-8">
                 <ChatMessages
                   messages={localMessages}
                   streamingContent={streamingContent}
