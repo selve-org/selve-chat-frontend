@@ -616,7 +616,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
         // Only add assistant message if we have content
         if (content.trim()) {
           setMessages((prev) => {
-            const updated = [...prev, { role: 'assistant', content }]
+            const updated = [...prev, { role: 'assistant' as const, content }]
 
             // Associate trace ID with the new assistant message
             if (currentTraceIdRef.current && updated.length > 0) {
@@ -653,12 +653,14 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
               const session = await restoreSession(effectiveSessionId)
               if (session?.messages && mountedRef.current) {
                 // Merge database IDs into existing messages instead of replacing
-                setMessages((prevMessages) => {
+                setMessages((prevMessages): Message[] => {
+                  if (!session.messages) return prevMessages
+
                   // If DB has same number of messages, update with IDs
                   if (session.messages.length === prevMessages.length) {
                     return prevMessages.map((msg, idx) => ({
                       ...msg,
-                      id: session.messages[idx]?.id || msg.id,
+                      id: session.messages![idx]?.id || msg.id,
                     }))
                   }
                   // If DB has more messages (shouldn't happen), use DB version
