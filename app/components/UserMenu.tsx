@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useUser, useClerk } from '@clerk/nextjs'
 import { useTheme } from 'next-themes'
-import { Sun, Moon, Monitor, Settings, LogOut, ExternalLink, BarChart3 } from 'lucide-react'
+import { Sun, Moon, Monitor, Settings, LogOut, ExternalLink, BarChart3, DollarSign } from 'lucide-react'
 
 interface UserMenuProps {
   userName?: string
@@ -174,6 +174,23 @@ export default function UserMenu({ userName, userPlan, isSignedIn, signInUrl }: 
                 </div>
                 <div className="flex flex-1 items-center justify-between">
                   <span className="font-medium">My Assessment Results</span>
+                  <ExternalLink className="h-3.5 w-3.5 text-zinc-500" />
+                </div>
+              </a>
+
+              {/* Pricing */}
+              <a
+                href={`${mainAppUrl}/pricing`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-300 transition-colors hover:bg-[#22201d] group"
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#151412] transition-colors group-hover:bg-[#2c261f]">
+                  <DollarSign className="h-4 w-4 text-zinc-400 group-hover:text-[#de6b35]" />
+                </div>
+                <div className="flex flex-1 items-center justify-between">
+                  <span className="font-medium">Pricing & Plans</span>
                   <ExternalLink className="h-3.5 w-3.5 text-zinc-500" />
                 </div>
               </a>
