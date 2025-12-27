@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   authors: [{ name: "SELVE" }],
   creator: "SELVE",
   publisher: "SELVE",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_CHATBOT_URL || "http://localhost:4000"),
+  metadataBase: new URL((process.env.NEXT_PUBLIC_CHATBOT_URL || "http://localhost:4000").trim()),
   alternates: {
     canonical: "/",
   },
