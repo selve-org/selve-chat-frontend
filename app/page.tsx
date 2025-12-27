@@ -31,16 +31,18 @@ export default function ChatPage() {
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const SIGNIN_DISMISSED_KEY = 'selve_signin_prompt_dismissed'
 
-  const mainAppBase =
+  const mainAppBase = (
     process.env.NEXT_PUBLIC_MAIN_APP_URL ||
     process.env.MAIN_APP_URL ||
     process.env.MAIN_APP_URL_DEV ||
     process.env.MAIN_APP_URL_PROD ||
     (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
+  ).trim()
 
-  const chatUrl =
+  const chatUrl = (
     process.env.NEXT_PUBLIC_CHATBOT_URL ||
     (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4000')
+  ).trim()
 
   const signInUrl = `${mainAppBase.replace(/\/$/, '')}/auth/redirect?redirect_to=${encodeURIComponent(chatUrl)}`
 
