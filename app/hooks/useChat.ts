@@ -565,10 +565,11 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
       }
 
       const selveScores = userProfile?.scores || null
-      const assessmentBase =
+      const assessmentBase = (
         process.env.NEXT_PUBLIC_ASSESSMENT_URL ||
         process.env.NEXT_PUBLIC_MAIN_APP_URL ||
         (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
+      ).trim()
       const assessmentUrl = `${assessmentBase.replace(/\/$/, '')}/assessment`
 
       // Create session if needed

@@ -21,7 +21,7 @@ export default function UserMenu({ userName, userPlan, isSignedIn, signInUrl }: 
   const [assessmentSessionId, setAssessmentSessionId] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  const mainAppUrl = process.env.NEXT_PUBLIC_MAIN_APP_URL || 'http://localhost:3000'
+  const mainAppUrl = (process.env.NEXT_PUBLIC_MAIN_APP_URL || 'http://localhost:3000').trim()
 
   useEffect(() => {
     setMounted(true)
