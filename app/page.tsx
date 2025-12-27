@@ -38,7 +38,11 @@ export default function ChatPage() {
     process.env.MAIN_APP_URL_PROD ||
     (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
 
-  const signInUrl = `${mainAppBase.replace(/\/$/, '')}/sign-in`
+  const chatUrl =
+    process.env.NEXT_PUBLIC_CHATBOT_URL ||
+    (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4000')
+
+  const signInUrl = `${mainAppBase.replace(/\/$/, '')}/auth/redirect?redirect_to=${encodeURIComponent(chatUrl)}`
 
   const {
     messages,
