@@ -21,7 +21,7 @@ import { useChat } from './hooks/useChat'
  */
 export default function ChatPage() {
   const { user, isLoaded: isUserLoaded } = useUser()
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [showSignInPrompt, setShowSignInPrompt] = useState(false)
   const [editingMessageIndex, setEditingMessageIndex] = useState<number | null>(null)
   const [editingContent, setEditingContent] = useState('')
@@ -30,6 +30,7 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const SIGNIN_DISMISSED_KEY = 'selve_signin_prompt_dismissed'
+  const SIDEBAR_STATE_KEY = 'selve_sidebar_open'
 
   const mainAppBase = (
     process.env.NEXT_PUBLIC_MAIN_APP_URL ||
@@ -99,6 +100,23 @@ export default function ChatPage() {
       setShowSignInPrompt(true)
     }
   }, [user, isUserLoaded])
+
+  // Load sidebar state from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedState = localStorage.getItem(SIDEBAR_STATE_KEY)
+      if (savedState !== null) {
+        setIsSidebarOpen(savedState === 'true')
+      }
+    }
+  }, [])
+
+  // Save sidebar state to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(SIDEBAR_STATE_KEY, String(isSidebarOpen))
+    }
+  }, [isSidebarOpen])
 
   const dismissSignInPrompt = () => {
     setShowSignInPrompt(false)
