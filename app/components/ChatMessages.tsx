@@ -55,7 +55,7 @@ export default function ChatMessages({
   onCancelEdit,
 }: ChatMessagesProps) {
   const { displayedContent, isTyping } = useStreamingTypewriter(streamingContent, {
-    baseSpeed: 30,
+    baseSpeed: 12,
     naturalVariation: true,
   })
 
