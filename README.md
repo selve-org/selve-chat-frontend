@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SELVE Chatbot - Frontend
 
-## Getting Started
+**Live:** [chat.selve.me](https://chat.selve.me)  
+**Status:** Production
 
-First, run the development server:
+Next.js chat interface for SELVE personality insights. Users can ask questions about their assessment results and get AI-powered explanations grounded in psychology research.
+
+## Features
+
+- Chat UI with message history
+- Real-time typing indicators
+- Markdown response rendering
+- Authentication with Clerk
+- Responsive mobile design
+
+## Quick Start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+pnpm dev  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Tech Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Framework:** Next.js 16 with App Router  
+**Styling:** TailwindCSS  
+**Auth:** Clerk (shares session with main SELVE app)  
+**API:** Connects to `api-chat.selve.me` (FastAPI backend)  
+**Deployment:** Vercel (auto-deploy from `main` branch)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment Variables
 
-## Learn More
+Copy `.env.template` to `.env` and add your keys:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+cp .env.template .env
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deployment
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Push to `main` branch → Vercel auto-deploys to `chat.selve.me`
 
-## Deploy on Vercel
+```bash
+git push origin main
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Related Repos
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [selve](https://github.com/selve-org/selve) - Main assessment platform
+- [selve-chat-backend](https://github.com/selve-org/selve-chat-backend) - FastAPI + RAG backend
