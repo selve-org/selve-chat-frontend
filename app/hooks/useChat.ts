@@ -680,6 +680,9 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
       }
 
       try {
+        // Detect user's timezone automatically
+        const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+
         const requestBody: any = {
           message: trimmedMessage,
           session_id: effectiveSessionId,
@@ -687,6 +690,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
           user_name: userName || null,
           selve_scores: selveScores,
           assessment_url: assessmentUrl,
+          user_timezone: userTimezone,  // User's local timezone
           stream: true,
         }
 
