@@ -147,6 +147,7 @@ export function useStreamingTypewriter(
   const [displayedContent, setDisplayedContent] = useState('')
   const targetRef = useRef(streamedContent)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const isTypingRef = useRef(false)
 
   // Always keep target up to date
   useEffect(() => {
@@ -155,18 +156,15 @@ export function useStreamingTypewriter(
 
   // Single effect that manages the typing loop
   useEffect(() => {
-    // Clear any existing timer
-    if (timerRef.current) {
-      clearTimeout(timerRef.current)
-      timerRef.current = null
-    }
-
     const typeNextChar = () => {
       setDisplayedContent(prev => {
         const target = targetRef.current
 
         // Already caught up
         if (prev.length >= target.length) {
+          // Clear timer when caught up
+          timerRef.current = null
+          isTypingRef.current = false
           return prev
         }
 
@@ -178,17 +176,21 @@ export function useStreamingTypewriter(
           const variation = naturalVariation ? 0.7 + Math.random() * 0.6 : 1
           const delay = (1000 / baseSpeed) * variation
           timerRef.current = setTimeout(typeNextChar, delay)
+          isTypingRef.current = true
+        } else {
+          timerRef.current = null
+          isTypingRef.current = false
         }
 
         return next
       })
     }
 
-    // Start typing if there's content to display
-    if (streamedContent.length > 0) {
-      // Small initial delay, then start
+    // Only start typing if not already typing and there's new content
+    if (streamedContent.length > 0 && !isTypingRef.current) {
       const variation = naturalVariation ? 0.7 + Math.random() * 0.6 : 1
       const delay = (1000 / baseSpeed) * variation
+      isTypingRef.current = true
       timerRef.current = setTimeout(typeNextChar, delay)
     }
 
@@ -197,6 +199,7 @@ export function useStreamingTypewriter(
         clearTimeout(timerRef.current)
         timerRef.current = null
       }
+      isTypingRef.current = false
     }
   }, [streamedContent, baseSpeed, naturalVariation])
 
