@@ -52,6 +52,7 @@ export interface MessageCitations {
 interface UseChatOptions {
   userId?: string | null
   userName?: string | null
+  signInUrl?: string
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'
@@ -76,7 +77,7 @@ function isValidSessionWithMessages(
   return isValidSession(data)
 }
 
-export function useChat({ userId, userName }: UseChatOptions = {}) {
+export function useChat({ userId, userName, signInUrl }: UseChatOptions = {}) {
   // Core state
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -707,6 +708,9 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
         // Detect user's timezone automatically
         const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
 
+        // Determine if user is authenticated (not anonymous)
+        const isAuthenticated = userId ? !userId.startsWith('anon_') : false
+
         const requestBody: any = {
           message: trimmedMessage,
           session_id: effectiveSessionId,
@@ -715,6 +719,8 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
           selve_scores: selveScores,
           assessment_url: assessmentUrl,
           user_timezone: userTimezone,  // User's local timezone
+          is_authenticated: isAuthenticated,  // Whether user is logged in
+          sign_in_url: signInUrl || null,  // Sign-in URL for environment
           stream: true,
         }
 

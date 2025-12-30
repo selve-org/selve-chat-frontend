@@ -75,6 +75,7 @@ export default function ChatPage() {
   } = useChat({
     userId: user?.id,
     userName: user?.firstName || user?.username,
+    signInUrl: signInUrl,
   })
 
   // Scroll to bottom when messages change
@@ -248,7 +249,7 @@ export default function ChatPage() {
 
   return (
     <div
-      className={`flex h-screen bg-[radial-gradient(circle_at_20%_0%,rgba(222,107,53,0.12),transparent_28%),radial-gradient(circle_at_80%_10%,rgba(255,255,255,0.04),transparent_30%),#0f0f0e] text-white transition-all duration-300 ease-out ${isSidebarOpen ? 'lg:pl-64' : 'lg:pl-0'}`}
+      className={`flex h-screen bg-[radial-gradient(circle_at_20%_0%,rgba(222,107,53,0.12),transparent_28%),radial-gradient(circle_at_80%_10%,rgba(255,255,255,0.04),transparent_30%),#0f0f0e] text-white transition-all duration-300 ease-out ${user && isSidebarOpen ? 'lg:pl-64' : 'lg:pl-0'}`}
     >
       {/* Error toast */}
       {error && (
