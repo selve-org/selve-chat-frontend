@@ -154,16 +154,15 @@ export function useStreamingTypewriter(
     targetRef.current = streamedContent
   }, [streamedContent])
 
-  // Single effect that manages the typing loop
+  // Main typing effect
   useEffect(() => {
+    // Define the typing function
     const typeNextChar = () => {
       setDisplayedContent(prev => {
         const target = targetRef.current
 
         // Already caught up
         if (prev.length >= target.length) {
-          // Clear timer when caught up
-          timerRef.current = null
           isTypingRef.current = false
           return prev
         }
@@ -171,37 +170,38 @@ export function useStreamingTypewriter(
         // Add exactly one character
         const next = target.slice(0, prev.length + 1)
 
-        // Schedule next character if there's more to type
-        if (next.length < targetRef.current.length) {
-          const variation = naturalVariation ? 0.7 + Math.random() * 0.6 : 1
-          const delay = (1000 / baseSpeed) * variation
-          timerRef.current = setTimeout(typeNextChar, delay)
-          isTypingRef.current = true
-        } else {
-          timerRef.current = null
-          isTypingRef.current = false
-        }
+        // Schedule next character
+        const variation = naturalVariation ? 0.7 + Math.random() * 0.6 : 1
+        const delay = (1000 / baseSpeed) * variation
+        timerRef.current = setTimeout(typeNextChar, delay)
 
         return next
       })
     }
 
-    // Only start typing if not already typing and there's new content
+    // Only start typing if not already typing and there's content
     if (streamedContent.length > 0 && !isTypingRef.current) {
+      isTypingRef.current = true
       const variation = naturalVariation ? 0.7 + Math.random() * 0.6 : 1
       const delay = (1000 / baseSpeed) * variation
-      isTypingRef.current = true
       timerRef.current = setTimeout(typeNextChar, delay)
     }
 
+    // Cleanup: only clear timer on unmount, NOT on re-render
+    return () => {
+      // Don't clear timer or reset isTypingRef here
+      // Let the typing loop complete naturally
+    }
+  }, [streamedContent, baseSpeed, naturalVariation])
+
+  // Cleanup only on unmount
+  useEffect(() => {
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current)
-        timerRef.current = null
       }
-      isTypingRef.current = false
     }
-  }, [streamedContent, baseSpeed, naturalVariation])
+  }, [])
 
   // Reset when stream clears
   useEffect(() => {
