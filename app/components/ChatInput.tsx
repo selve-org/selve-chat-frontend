@@ -150,7 +150,7 @@ export default function ChatInput({
               Access restricted. Try again at {new Date(banExpiresAt).toLocaleString()}
             </span>
           ) : (
-            <span className="text-zinc-500">Press Enter to send, Shift+Enter for new line</span>
+            <span className="hidden text-zinc-500 md:inline">Press Enter to send, Shift+Enter for new line</span>
           )}
         </div>
       </div>
