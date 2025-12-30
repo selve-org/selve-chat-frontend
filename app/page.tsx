@@ -281,27 +281,30 @@ export default function ChatPage() {
         </div>
       )}
 
-      {/* Sidebar */}
-      <Sidebar
-        sessions={sessions}
-        activeSessionId={sessionId}
-        onSessionSelect={switchSession}
-        onNewChat={createNewConversation}
-        onDeleteSession={deleteSession}
-        isOpen={isSidebarOpen}
-        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-        userName={userAccount?.user_name || user?.fullName || user?.firstName || user?.username || undefined}
-        userPlan={userAccount?.subscription_plan || userProfile?.subscriptionPlan}
-        isSignedIn={!!user}
-        signInUrl={signInUrl}
-        currentMessages={messages}
-      />
+      {/* Sidebar - Only show for authenticated users */}
+      {user && (
+        <Sidebar
+          sessions={sessions}
+          activeSessionId={sessionId}
+          onSessionSelect={switchSession}
+          onNewChat={createNewConversation}
+          onDeleteSession={deleteSession}
+          isOpen={isSidebarOpen}
+          onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+          userName={userAccount?.user_name || user?.fullName || user?.firstName || user?.username || undefined}
+          userPlan={userAccount?.subscription_plan || userProfile?.subscriptionPlan}
+          isSignedIn={!!user}
+          signInUrl={signInUrl}
+          currentMessages={messages}
+        />
+      )}
 
       {/* Main content area */}
       <main className="flex flex-1 flex-col">
         <TopBar
           onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
           title="SELVE Chat"
+          showMenuButton={!!user}
         />
 
         <div className="flex flex-1 flex-col overflow-hidden min-h-0">

@@ -410,6 +410,30 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
     setIsLoadingSession(true)
 
     try {
+      // Check if user is authenticated (has real Clerk user ID)
+      const isAuthenticated = userId && !userId.startsWith('anon_')
+
+      // For ANONYMOUS users: Start fresh on every page load
+      // - No session restoration
+      // - No history loading
+      // - Clear any cached data
+      if (!isAuthenticated) {
+        if (mountedRef.current) {
+          setSessionId(null)
+          setMessages([])
+          setSessions([]) // Clear sidebar sessions
+          isPendingNewSession.current = true
+          sessionStorage.removeItem('currentSessionId')
+          // Clear anonymous ID so a new one is generated (truly temporary)
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('selve_chat_anon_id')
+          }
+        }
+        setIsLoadingSession(false)
+        return
+      }
+
+      // For AUTHENTICATED users: Restore session and history
       const persistedSessionId = sessionStorage.getItem('currentSessionId')
       if (persistedSessionId) {
         const session = await restoreSession(persistedSessionId)
@@ -461,7 +485,7 @@ export function useChat({ userId, userName }: UseChatOptions = {}) {
         setIsLoadingSession(false)
       }
     }
-  }, [loadUserSessions, restoreSession, ensureSessionInList])
+  }, [userId, loadUserSessions, restoreSession, ensureSessionInList])
 
   // Switch to a different session
   const switchSession = useCallback(
