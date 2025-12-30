@@ -7,68 +7,38 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 // ============================================================================
 
 interface UseTypewriterOptions {
-  /** Characters per second (default: 30) */
   speed?: number
-  /** Delay before starting in ms (default: 0) */
   delay?: number
-  /** Whether to skip the typewriter effect and show all text immediately */
   skipAnimation?: boolean
-  /** Callback when typing is complete */
   onComplete?: () => void
 }
 
 interface UseTypewriterReturn {
-  /** The currently displayed text */
   displayedText: string
-  /** Whether the typewriter is currently typing */
   isTyping: boolean
-  /** Skip to the end and show all text */
   skipToEnd: () => void
-  /** Reset and start typing from the beginning */
   restart: () => void
 }
 
-/**
- * React hook for typewriter text animation effect.
- * Displays text character by character at a configurable speed.
- * 
- * @param text - The full text to display with typewriter effect
- * @param options - Configuration options for the typewriter
- * @returns Object with displayedText, isTyping state, and control functions
- */
 export function useTypewriter(
   text: string,
   options: UseTypewriterOptions = {}
 ): UseTypewriterReturn {
-  const {
-    speed = 30,
-    delay = 0,
-    skipAnimation = false,
-    onComplete,
-  } = options
+  const { speed = 30, delay = 0, skipAnimation = false, onComplete } = options
 
   const [displayedText, setDisplayedText] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   
-  // Use refs for mutable values to avoid stale closures
   const charIndexRef = useRef(0)
   const textRef = useRef(text)
   const onCompleteRef = useRef(onComplete)
   const mountedRef = useRef(true)
   
-  // Update refs when props change
-  useEffect(() => {
-    textRef.current = text
-  }, [text])
-  
-  useEffect(() => {
-    onCompleteRef.current = onComplete
-  }, [onComplete])
+  useEffect(() => { textRef.current = text }, [text])
+  useEffect(() => { onCompleteRef.current = onComplete }, [onComplete])
 
-  // Calculate interval in ms from characters per second
   const interval = useMemo(() => 1000 / speed, [speed])
 
-  // Reset and start typing when text changes
   useEffect(() => {
     if (skipAnimation) {
       setDisplayedText(text)
@@ -77,7 +47,6 @@ export function useTypewriter(
       return
     }
 
-    // Reset state for new text
     charIndexRef.current = 0
     setDisplayedText('')
     setIsTyping(true)
@@ -99,12 +68,9 @@ export function useTypewriter(
 
       charIndexRef.current = currentIndex + 1
       setDisplayedText(currentText.slice(0, currentIndex + 1))
-
-      // Schedule next character
       timeoutId = setTimeout(typeNextChar, interval)
     }
 
-    // Start with initial delay
     timeoutId = setTimeout(typeNextChar, delay)
 
     return () => {
@@ -113,12 +79,9 @@ export function useTypewriter(
     }
   }, [text, skipAnimation, delay, interval])
 
-  // Cleanup on unmount
   useEffect(() => {
     mountedRef.current = true
-    return () => {
-      mountedRef.current = false
-    }
+    return () => { mountedRef.current = false }
   }, [])
 
   const skipToEnd = useCallback(() => {
@@ -134,302 +97,313 @@ export function useTypewriter(
     setIsTyping(true)
   }, [])
 
-  return {
-    displayedText,
-    isTyping,
-    skipToEnd,
-    restart,
-  }
+  return { displayedText, isTyping, skipToEnd, restart }
 }
 
 // ============================================================================
-// STREAMING TYPEWRITER HOOK - For LLM responses that arrive in chunks
+// STREAMING TYPEWRITER HOOK - For LLM responses (accumulated content)
 // ============================================================================
 
 interface UseStreamingTypewriterOptions {
-  /** Base speed in chars per second (default: 40) */
-  baseSpeed?: number
-  /** Whether to add natural variation to timing (default: true) */
+  /** Characters per second (default: 60) */
+  charsPerSecond?: number
+  /** Add natural timing variation (default: true) */
   naturalVariation?: boolean
-  /** Minimum speed multiplier for variation (default: 0.7) */
-  minSpeedMultiplier?: number
-  /** Maximum speed multiplier for variation (default: 1.3) */
+  /** Speed up when buffer is large (default: true) */
+  adaptiveSpeed?: boolean
+  /** Buffer size threshold to trigger speed up (default: 50) */
+  speedUpThreshold?: number
+  /** Maximum speed multiplier when catching up (default: 3) */
   maxSpeedMultiplier?: number
-  /** Whether the stream is complete - when true, types remaining content faster */
-  streamComplete?: boolean
-  /** Speed multiplier when catching up after stream completes (default: 2) */
-  catchUpSpeedMultiplier?: number
 }
 
 interface UseStreamingTypewriterReturn {
-  /** The currently displayed content */
   displayedContent: string
-  /** Whether the typewriter is currently typing */
   isTyping: boolean
-  /** Skip to end and show all content immediately */
   skipToEnd: () => void
-  /** Reset to empty state */
   reset: () => void
 }
 
 /**
- * Hook for making streamed content appear with a typewriter effect.
- * Designed for LLM responses where content arrives in chunks.
+ * Streaming typewriter hook designed for LLM responses.
  * 
- * Key features:
- * - Handles race conditions properly
- * - Catches up naturally when stream is faster than typing
- * - Optional natural timing variation for realistic feel
- * - Proper cleanup to prevent memory leaks
+ * Key insight: streamedContent is ACCUMULATED (grows over time).
+ * We track how much we've displayed and only animate NEW characters.
+ * 
+ * This prevents the "reset" problem where changing streamedContent
+ * would cause the animation to restart.
  */
 export function useStreamingTypewriter(
   streamedContent: string,
   options: UseStreamingTypewriterOptions = {}
 ): UseStreamingTypewriterReturn {
   const {
-    baseSpeed = 40,
+    charsPerSecond = 60,
     naturalVariation = true,
-    minSpeedMultiplier = 0.7,
-    maxSpeedMultiplier = 1.3,
-    streamComplete = false,
-    catchUpSpeedMultiplier = 2,
+    adaptiveSpeed = true,
+    speedUpThreshold = 50,
+    maxSpeedMultiplier = 3,
   } = options
 
+  // State: only the displayed content (what user sees)
   const [displayedContent, setDisplayedContent] = useState('')
   
-  // Refs for managing typing state without re-renders
-  const targetContentRef = useRef(streamedContent)
+  // Refs for animation state (don't trigger re-renders)
   const displayedLengthRef = useRef(0)
-  const animationFrameRef = useRef<number | null>(null)
-  const lastTypeTimeRef = useRef(0)
-  const isActiveRef = useRef(false)
+  const rafIdRef = useRef<number | null>(null)
+  const lastFrameTimeRef = useRef(0)
+  const accumulatedTimeRef = useRef(0)
   const mountedRef = useRef(true)
-  const skipToEndRef = useRef(false)
-
-  // Calculate base interval
-  const baseInterval = useMemo(() => 1000 / baseSpeed, [baseSpeed])
-
-  // Get randomized interval with natural variation
-  const getTypingInterval = useCallback((isCatchingUp: boolean) => {
-    const effectiveSpeed = isCatchingUp ? catchUpSpeedMultiplier : 1
-    const baseDelay = baseInterval / effectiveSpeed
-    
-    if (!naturalVariation) return baseDelay
-    
-    const multiplier = minSpeedMultiplier + 
-      Math.random() * (maxSpeedMultiplier - minSpeedMultiplier)
-    return baseDelay * multiplier
-  }, [baseInterval, naturalVariation, minSpeedMultiplier, maxSpeedMultiplier, catchUpSpeedMultiplier])
-
-  // Update target content ref when prop changes
+  const skippedRef = useRef(false)
+  
+  // Keep track of current target content via ref (avoids stale closure)
+  const targetContentRef = useRef(streamedContent)
   useEffect(() => {
     targetContentRef.current = streamedContent
   }, [streamedContent])
 
-  // Main typing animation using requestAnimationFrame for smooth performance
+  // Calculate base interval (ms per character)
+  const baseInterval = useMemo(() => 1000 / charsPerSecond, [charsPerSecond])
+
+  // Animation loop using requestAnimationFrame
   useEffect(() => {
-    // Handle empty content reset
+    // Handle reset when content is cleared
     if (streamedContent === '') {
       displayedLengthRef.current = 0
+      accumulatedTimeRef.current = 0
+      lastFrameTimeRef.current = 0
+      skippedRef.current = false
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current)
+        rafIdRef.current = null
+      }
       setDisplayedContent('')
-      isActiveRef.current = false
-      skipToEndRef.current = false
       return
     }
 
-    // Skip to end was requested
-    if (skipToEndRef.current) {
+    // If user skipped to end, just update to latest content
+    if (skippedRef.current) {
+      displayedLengthRef.current = streamedContent.length
+      setDisplayedContent(streamedContent)
       return
     }
 
-    let nextTypeTime = lastTypeTimeRef.current
-    let cancelled = false
+    // Don't start a new animation loop if one is already running
+    if (rafIdRef.current !== null) {
+      return
+    }
 
     const animate = (timestamp: number) => {
-      if (cancelled || !mountedRef.current || skipToEndRef.current) return
+      if (!mountedRef.current) return
 
-      const target = targetContentRef.current
-      const currentLength = displayedLengthRef.current
-
-      // Check if we've caught up
-      if (currentLength >= target.length) {
-        isActiveRef.current = false
+      // Check if skipped during animation
+      if (skippedRef.current) {
+        const target = targetContentRef.current
+        displayedLengthRef.current = target.length
+        setDisplayedContent(target)
+        rafIdRef.current = null
         return
       }
 
-      // Check if enough time has passed to type next character
-      if (timestamp >= nextTypeTime) {
-        // Determine if we need to catch up (buffer is building)
-        const bufferSize = target.length - currentLength
-        const isCatchingUp = bufferSize > 10 || streamComplete
+      // Calculate delta time since last frame
+      const deltaTime = lastFrameTimeRef.current > 0 
+        ? timestamp - lastFrameTimeRef.current 
+        : 16 // Assume ~60fps for first frame
+      lastFrameTimeRef.current = timestamp
 
-        // Type the next character
-        displayedLengthRef.current = currentLength + 1
-        setDisplayedContent(target.slice(0, currentLength + 1))
+      // Get current target from ref (always fresh)
+      const target = targetContentRef.current
+      const targetLength = target.length
+      const currentDisplayed = displayedLengthRef.current
 
-        // Schedule next character
-        const interval = getTypingInterval(isCatchingUp)
-        nextTypeTime = timestamp + interval
-        lastTypeTimeRef.current = nextTypeTime
+      // Already caught up - keep the loop running to catch new content
+      if (currentDisplayed >= targetLength) {
+        rafIdRef.current = requestAnimationFrame(animate)
+        return
+      }
+
+      // Calculate how many chars to add this frame
+      const bufferSize = targetLength - currentDisplayed
+      
+      // Adaptive speed: faster when buffer is large
+      let speedMultiplier = 1
+      if (adaptiveSpeed && bufferSize > speedUpThreshold) {
+        speedMultiplier = Math.min(
+          maxSpeedMultiplier,
+          1 + (bufferSize - speedUpThreshold) / speedUpThreshold
+        )
+      }
+
+      // Natural variation (±20%)
+      const variation = naturalVariation ? 0.8 + Math.random() * 0.4 : 1
+      
+      // Effective interval for this frame
+      const effectiveInterval = (baseInterval / speedMultiplier) * variation
+
+      // Accumulate time and calculate chars to add
+      accumulatedTimeRef.current += deltaTime
+      const charsToAdd = Math.floor(accumulatedTimeRef.current / effectiveInterval)
+
+      if (charsToAdd > 0) {
+        // Consume the time for chars we're adding
+        accumulatedTimeRef.current -= charsToAdd * effectiveInterval
+        
+        // Add characters (but don't exceed target)
+        const newLength = Math.min(currentDisplayed + charsToAdd, targetLength)
+        displayedLengthRef.current = newLength
+        
+        // Update state (triggers re-render)
+        setDisplayedContent(target.slice(0, newLength))
       }
 
       // Continue animation loop
-      isActiveRef.current = true
-      animationFrameRef.current = requestAnimationFrame(animate)
+      rafIdRef.current = requestAnimationFrame(animate)
     }
 
-    // Start animation if not already running
-    if (!isActiveRef.current && displayedLengthRef.current < streamedContent.length) {
-      isActiveRef.current = true
-      // Initialize timing if this is a fresh start
-      if (displayedLengthRef.current === 0) {
-        nextTypeTime = performance.now()
-        lastTypeTimeRef.current = nextTypeTime
-      }
-      animationFrameRef.current = requestAnimationFrame(animate)
-    }
+    // Start animation loop
+    lastFrameTimeRef.current = 0
+    rafIdRef.current = requestAnimationFrame(animate)
 
+    // Cleanup function - only runs on unmount or when streamedContent becomes empty
     return () => {
-      cancelled = true
-      if (animationFrameRef.current !== null) {
-        cancelAnimationFrame(animationFrameRef.current)
-        animationFrameRef.current = null
-      }
+      // Don't cancel the animation when streamedContent changes (grows)
+      // Only cancel when it resets to empty (handled above)
     }
-  }, [streamedContent, streamComplete, getTypingInterval])
+  }, [streamedContent === '', baseInterval, naturalVariation, adaptiveSpeed, speedUpThreshold, maxSpeedMultiplier])
 
   // Cleanup on unmount
   useEffect(() => {
     mountedRef.current = true
     return () => {
       mountedRef.current = false
-      if (animationFrameRef.current !== null) {
-        cancelAnimationFrame(animationFrameRef.current)
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current)
+        rafIdRef.current = null
       }
     }
   }, [])
 
   const skipToEnd = useCallback(() => {
-    skipToEndRef.current = true
-    isActiveRef.current = false
-    if (animationFrameRef.current !== null) {
-      cancelAnimationFrame(animationFrameRef.current)
-      animationFrameRef.current = null
-    }
-    displayedLengthRef.current = targetContentRef.current.length
-    setDisplayedContent(targetContentRef.current)
+    skippedRef.current = true
+    const target = targetContentRef.current
+    displayedLengthRef.current = target.length
+    setDisplayedContent(target)
   }, [])
 
   const reset = useCallback(() => {
-    skipToEndRef.current = false
-    isActiveRef.current = false
-    if (animationFrameRef.current !== null) {
-      cancelAnimationFrame(animationFrameRef.current)
-      animationFrameRef.current = null
-    }
+    skippedRef.current = false
     displayedLengthRef.current = 0
-    lastTypeTimeRef.current = 0
+    accumulatedTimeRef.current = 0
+    lastFrameTimeRef.current = 0
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current)
+      rafIdRef.current = null
+    }
     setDisplayedContent('')
   }, [])
 
   const isTyping = displayedContent.length < streamedContent.length
 
-  return {
-    displayedContent,
-    isTyping,
-    skipToEnd,
-    reset,
-  }
+  return { displayedContent, isTyping, skipToEnd, reset }
 }
 
 // ============================================================================
-// ALTERNATIVE: SIMPLER STREAMING TYPEWRITER (setTimeout-based)
-// Use this if you encounter issues with requestAnimationFrame
+// SIMPLER ALTERNATIVE: setTimeout-based (fallback if RAF has issues)
 // ============================================================================
 
-interface UseSimpleStreamingTypewriterOptions {
-  /** Characters per second (default: 40) */
-  speed?: number
-  /** Add natural variation to timing (default: true) */
-  naturalVariation?: boolean
-}
-
-/**
- * Simpler streaming typewriter using setTimeout.
- * More compatible but slightly less smooth than RAF version.
- */
 export function useSimpleStreamingTypewriter(
   streamedContent: string,
-  options: UseSimpleStreamingTypewriterOptions = {}
-): { displayedContent: string; isTyping: boolean } {
-  const { speed = 40, naturalVariation = true } = options
+  options: { charsPerSecond?: number; naturalVariation?: boolean } = {}
+): { displayedContent: string; isTyping: boolean; skipToEnd: () => void } {
+  const { charsPerSecond = 60, naturalVariation = true } = options
 
   const [displayedContent, setDisplayedContent] = useState('')
   
-  // Use a single ref object to avoid multiple ref updates
+  // Use a single ref object to track all mutable state
   const stateRef = useRef({
-    target: streamedContent,
     displayedLength: 0,
     timerId: null as ReturnType<typeof setTimeout> | null,
-    isRunning: false,
+    isAnimating: false,
+    skipped: false,
+    target: streamedContent,
   })
 
-  const baseInterval = 1000 / speed
-
-  // Update target when content changes
+  // Always keep target up to date
   useEffect(() => {
     stateRef.current.target = streamedContent
   }, [streamedContent])
 
-  // Main effect - manages the typing loop
+  const baseInterval = 1000 / charsPerSecond
+
   useEffect(() => {
-    // Reset on empty content
+    const state = stateRef.current
+
+    // Reset case
     if (streamedContent === '') {
-      stateRef.current.displayedLength = 0
-      stateRef.current.isRunning = false
-      if (stateRef.current.timerId) {
-        clearTimeout(stateRef.current.timerId)
-        stateRef.current.timerId = null
+      state.displayedLength = 0
+      state.isAnimating = false
+      state.skipped = false
+      if (state.timerId) {
+        clearTimeout(state.timerId)
+        state.timerId = null
       }
       setDisplayedContent('')
       return
     }
 
-    const typeNextChar = () => {
-      const state = stateRef.current
-      const currentLength = state.displayedLength
-      const target = state.target
+    // Skipped case - show full content
+    if (state.skipped) {
+      state.displayedLength = streamedContent.length
+      setDisplayedContent(streamedContent)
+      return
+    }
 
-      // Stop if caught up
-      if (currentLength >= target.length) {
-        state.isRunning = false
+    // Already animating - let it continue
+    if (state.isAnimating) {
+      return
+    }
+
+    const typeNext = () => {
+      const s = stateRef.current
+      
+      if (s.skipped) {
+        s.displayedLength = s.target.length
+        setDisplayedContent(s.target)
+        s.isAnimating = false
         return
       }
 
-      // Type next character
-      state.displayedLength = currentLength + 1
-      setDisplayedContent(target.slice(0, currentLength + 1))
+      const targetLength = s.target.length
+      const currentLength = s.displayedLength
 
-      // Schedule next
+      if (currentLength >= targetLength) {
+        // Caught up - check again soon for new content
+        s.timerId = setTimeout(typeNext, 50)
+        return
+      }
+
+      // Type one character
+      s.displayedLength = currentLength + 1
+      setDisplayedContent(s.target.slice(0, currentLength + 1))
+
+      // Schedule next character
       const variation = naturalVariation ? 0.7 + Math.random() * 0.6 : 1
-      const delay = baseInterval * variation
       
-      state.timerId = setTimeout(typeNextChar, delay)
+      // Speed up if buffer is large
+      const bufferSize = targetLength - (currentLength + 1)
+      const speedUp = bufferSize > 30 ? Math.min(3, 1 + bufferSize / 50) : 1
+      
+      const delay = (baseInterval / speedUp) * variation
+      s.timerId = setTimeout(typeNext, delay)
     }
 
-    // Start if not already running and there's content to type
-    if (!stateRef.current.isRunning && stateRef.current.displayedLength < streamedContent.length) {
-      stateRef.current.isRunning = true
-      const variation = naturalVariation ? 0.7 + Math.random() * 0.6 : 1
-      stateRef.current.timerId = setTimeout(typeNextChar, baseInterval * variation)
-    }
+    // Start typing
+    state.isAnimating = true
+    const variation = naturalVariation ? 0.7 + Math.random() * 0.6 : 1
+    state.timerId = setTimeout(typeNext, baseInterval * variation)
 
-    // Cleanup only stops the timer, doesn't reset state
-    return () => {
-      // Don't clear timer or reset state on re-render
-      // This is intentional to maintain continuous typing
-    }
-  }, [streamedContent, baseInterval, naturalVariation])
+    // No cleanup - let animation continue
+  }, [streamedContent === '', baseInterval, naturalVariation])
 
   // Cleanup on unmount only
   useEffect(() => {
@@ -440,9 +414,21 @@ export function useSimpleStreamingTypewriter(
     }
   }, [])
 
+  const skipToEnd = useCallback(() => {
+    const state = stateRef.current
+    state.skipped = true
+    state.displayedLength = state.target.length
+    if (state.timerId) {
+      clearTimeout(state.timerId)
+      state.timerId = null
+    }
+    state.isAnimating = false
+    setDisplayedContent(state.target)
+  }, [])
+
   const isTyping = displayedContent.length < streamedContent.length
 
-  return { displayedContent, isTyping }
+  return { displayedContent, isTyping, skipToEnd }
 }
 
 export default useTypewriter
