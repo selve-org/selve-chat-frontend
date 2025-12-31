@@ -47,7 +47,7 @@ export default function ChatMessages({
 }: ChatMessagesProps) {
   // Memoize options to prevent re-creating on every render
   const typewriterOptions = useMemo(() => ({
-    charsPerSecond: 80,        // Fast but visible typing
+    charsPerSecond: 40,        // Slower, more visible typing
     naturalVariation: true,    // Feels more natural
     adaptiveSpeed: true,       // Speed up when buffer builds
     speedUpThreshold: 30,      // Start speeding up at 30 char buffer
