@@ -1,8 +1,8 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useEffect, useState } from 'react'
 import ThinkingIndicator, { ThinkingStatus } from './ThinkingIndicator'
-import { useStreamingTypewriter } from '../hooks/useTypewriter'
+import { useStreamingTypewriter, useSimpleStreamingTypewriter } from '../hooks/useTypewriter'
 import MarkdownRenderer from './MarkdownRenderer'
 import MessageActions, { UserMessageActions } from './MessageActions'
 
@@ -45,6 +45,18 @@ export default function ChatMessages({
   onSaveEdit,
   onCancelEdit,
 }: ChatMessagesProps) {
+  // Detect mobile device
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const userAgent = navigator.userAgent.toLowerCase()
+      const mobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent)
+      setIsMobile(mobile)
+    }
+    checkMobile()
+  }, [])
+
   // Memoize options to prevent re-creating on every render
   const typewriterOptions = useMemo(() => ({
     charsPerSecond: 40,        // Slower, more visible typing
@@ -54,10 +66,14 @@ export default function ChatMessages({
     maxSpeedMultiplier: 4,     // Can go up to 4x speed when catching up
   }), [])
 
-  const { displayedContent, isTyping } = useStreamingTypewriter(
-    streamingContent,
-    typewriterOptions
-  )
+  // Use simpler setTimeout-based typewriter on mobile (RAF can have issues)
+  const rafResult = useStreamingTypewriter(streamingContent, typewriterOptions)
+  const simpleResult = useSimpleStreamingTypewriter(streamingContent, {
+    charsPerSecond: 40,
+    naturalVariation: true
+  })
+
+  const { displayedContent, isTyping } = isMobile ? simpleResult : rafResult
 
   // Choose what to display based on enableTypewriter flag
   const displayContent = enableTypewriter ? displayedContent : streamingContent
