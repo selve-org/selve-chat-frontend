@@ -210,7 +210,12 @@ export function useChat({ userId, userName, signInUrl }: UseChatOptions = {}) {
     const profilePromise = (async () => {
       try {
         const { data } = await safeFetch<UserProfile>(
-          `${API_URL}/api/users/${effectiveUserId}/scores`
+          `${API_URL}/api/users/${effectiveUserId}/scores`,
+          {
+            headers: {
+              'X-User-ID': effectiveUserId,
+            },
+          }
         )
         if (mountedRef.current && data) {
           setUserProfile(data)
@@ -221,7 +226,7 @@ export function useChat({ userId, userName, signInUrl }: UseChatOptions = {}) {
         }
       }
     })()
-    
+
     profileLoadedRef.current = profilePromise
     await profilePromise
   }, [getEffectiveUserId, safeFetch])
@@ -234,7 +239,12 @@ export function useChat({ userId, userName, signInUrl }: UseChatOptions = {}) {
     setIsLoadingAccount(true)
     try {
       const { data } = await safeFetch<UserAccount>(
-        `${API_URL}/api/users/${effectiveUserId}`
+        `${API_URL}/api/users/${effectiveUserId}`,
+        {
+          headers: {
+            'X-User-ID': effectiveUserId,
+          },
+        }
       )
       if (mountedRef.current && data) {
         setUserAccount(data)
@@ -414,6 +424,18 @@ export function useChat({ userId, userName, signInUrl }: UseChatOptions = {}) {
       // Check if user is authenticated (has real Clerk user ID)
       const isAuthenticated = userId && !userId.startsWith('anon_')
 
+      // For AUTHENTICATED users: Load account and profile data first
+      if (isAuthenticated) {
+        // Load account and profile in parallel with session initialization
+        // This prevents double loading screen
+        setIsLoadingAccount(true)
+        const accountPromise = loadUserAccount()
+        const profilePromise = loadUserProfile()
+
+        // Wait for account/profile to load
+        await Promise.all([accountPromise, profilePromise])
+      }
+
       // For ANONYMOUS users: Start fresh on every page load
       // - No session restoration
       // - No history loading
@@ -486,7 +508,7 @@ export function useChat({ userId, userName, signInUrl }: UseChatOptions = {}) {
         setIsLoadingSession(false)
       }
     }
-  }, [userId, loadUserSessions, restoreSession, ensureSessionInList])
+  }, [userId, loadUserSessions, restoreSession, ensureSessionInList, loadUserAccount, loadUserProfile])
 
   // Switch to a different session
   const switchSession = useCallback(
@@ -976,12 +998,19 @@ export function useChat({ userId, userName, signInUrl }: UseChatOptions = {}) {
     initializeSession()
   }, [initializeSession])
 
+  // Only reload data when userId changes AFTER initial mount
+  // (initial load is handled by initializeSession)
+  const initialMountDone = useRef(false)
   useEffect(() => {
-    if (userId) {
+    if (userId && initialMountDone.current) {
+      // User signed in during session - reload their data
       effectiveUserIdRef.current = null
       loadUserSessions()
       loadUserProfile()
       loadUserAccount()
+    }
+    if (userId) {
+      initialMountDone.current = true
     }
   }, [userId, loadUserSessions, loadUserProfile, loadUserAccount])
 
