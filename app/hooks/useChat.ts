@@ -647,7 +647,7 @@ export function useChat({ userId, userName, signInUrl }: UseChatOptions = {}) {
       setError(null)
       setSecurityWarning(null)
       setThinkingStatus({
-        status: 'retrieving_context',
+        status: 'analyzing',
         message: 'Processing your message...',
         details: {},
       })

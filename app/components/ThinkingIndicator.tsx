@@ -1,34 +1,31 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronRight, Brain, Search, User, Sparkles, Shield, CheckCircle, AlertCircle } from 'lucide-react'
+import { ChevronRight, Brain, Search, User, Sparkles, Shield, CheckCircle, AlertCircle, Youtube, Globe, Database } from 'lucide-react'
 
 /**
- * Enhanced ThinkingIndicator for SELVE Agentic Chatbot
- * 
- * Displays the multi-phase reasoning process:
- * 1. Security Check (analyzing for injection)
- * 2. Analyzing (understanding intent)
- * 3. Planning (deciding what tools to use)
- * 4. Retrieving (RAG, memories, user data)
- * 5. Personalizing (loading user profile)
- * 6. Generating (crafting response)
- * 7. Validating (checking response quality)
- * 8. Complete
+ * Honest ThinkingIndicator for SELVE Chatbot
+ *
+ * Shows actual work being done:
+ * 1. Security Check - Validates message safety
+ * 2. Analyzing - Intent classification
+ * 3. Planning - Decides which tools to use
+ * 4. Tool Execution - RAG, Memory, YouTube, Web, etc.
+ * 5. Generating - Creates personalized response
  */
 
 export interface ThinkingStatus {
-  status: 
+  status:
     | 'security_check'
-    | 'loading_user'
     | 'analyzing'
     | 'planning'
-    | 'retrieving_context'
-    | 'researching'
-    | 'personalizing'
+    | 'memory_searching'
+    | 'rag_searching'
+    | 'youtube_searching'
+    | 'youtube_fetching'
+    | 'web_searching'
+    | 'selve_web_searching'
     | 'generating'
-    | 'validating'
-    | 'citing_sources'
     | 'complete'
     | 'error'
   message: string
@@ -40,6 +37,7 @@ export interface ThinkingStatus {
     sources?: Array<{ title: string; source: string }>
     security_score?: number
     tools_used?: string[]
+    action?: string
   }
 }
 
@@ -60,53 +58,53 @@ const STATUS_CONFIG: Record<string, { label: string; icon: React.ElementType; co
     icon: Brain,
     color: 'text-blue-400',
   },
-  loading_user: {
-    label: 'Loading your profile...',
-    icon: User,
-    color: 'text-pink-400',
-  },
   planning: {
     label: 'Planning approach...',
     icon: Sparkles,
     color: 'text-purple-400',
   },
-  retrieving_context: {
-    label: 'Searching knowledge...',
-    icon: Search,
-    color: 'text-cyan-400',
-  },
-  researching: {
-    label: 'Researching...',
-    icon: Search,
-    color: 'text-cyan-400',
-  },
-  personalizing: {
-    label: 'Loading your profile...',
-    icon: User,
+  memory_searching: {
+    label: 'Searching conversation history...',
+    icon: Database,
     color: 'text-pink-400',
   },
-  generating: {
-    label: 'Thinking...',
-    icon: Brain,
-    color: 'text-emerald-400',
-  },
-  validating: {
-    label: 'Checking response...',
-    icon: Shield,
-    color: 'text-amber-400',
-  },
-  citing_sources: {
-    label: 'Adding sources...',
+  rag_searching: {
+    label: 'Searching personality knowledge...',
     icon: Search,
     color: 'text-cyan-400',
   },
+  youtube_searching: {
+    label: 'Searching psychology videos...',
+    icon: Youtube,
+    color: 'text-red-400',
+  },
+  youtube_fetching: {
+    label: 'Fetching video transcript...',
+    icon: Youtube,
+    color: 'text-red-500',
+  },
+  web_searching: {
+    label: 'Researching online...',
+    icon: Globe,
+    color: 'text-green-400',
+  },
+  selve_web_searching: {
+    label: 'Checking SELVE docs...',
+    icon: Search,
+    color: 'text-indigo-400',
+  },
+  generating: {
+    label: 'Crafting response...',
+    icon: Sparkles,
+    color: 'text-emerald-400',
+  },
   complete: {
-    label: 'Done',
+    label: 'Done!',
     icon: CheckCircle,
     color: 'text-green-400',
   },
   error: {
-    label: 'Something went wrong',
+    label: 'Error occurred',
     icon: AlertCircle,
     color: 'text-red-400',
   },
@@ -117,137 +115,126 @@ export default function ThinkingIndicator({ status, isVisible }: ThinkingIndicat
 
   if (!isVisible || !status) return null
 
-  const config = STATUS_CONFIG[status.status] || STATUS_CONFIG.generating
+  const config = STATUS_CONFIG[status.status] || {
+    label: status.message || 'Processing...',
+    icon: Brain,
+    color: 'text-gray-400',
+  }
+
   const Icon = config.icon
 
   return (
-    <div className="flex justify-start px-4 py-2">
-      <div className="flex flex-col gap-2 max-w-md">
-        {/* Main thinking indicator - clickable line */}
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="group flex items-center gap-2 text-sm text-zinc-400 transition-colors hover:text-zinc-300"
-        >
-          {/* Animated icon */}
-          <Icon className={`h-4 w-4 ${config.color} ${status.status !== 'complete' && status.status !== 'error' ? 'animate-pulse' : ''}`} />
-          
-          {/* Status label */}
-          <span className={status.status !== 'complete' && status.status !== 'error' ? 'animate-pulse-fade' : ''}>
-            {config.label}
-          </span>
-          
-          {/* Phase indicator */}
-          {status.details?.phase && status.details?.total_phases && (
-            <span className="text-xs text-zinc-500">
-              ({status.details.phase}/{status.details.total_phases})
-            </span>
-          )}
-          
-          {/* Expand chevron */}
-          <ChevronRight 
-            className={`h-3.5 w-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} 
-          />
-        </button>
+    <div className="mb-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm">
+      <div
+        className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100/50 dark:hover:bg-gray-700/50 transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        {/* Animated Icon */}
+        <div className={`flex-shrink-0 ${config.color}`}>
+          <Icon className="w-5 h-5 animate-pulse" />
+        </div>
 
-        {/* Expanded details */}
-        {isExpanded && (
-          <div className="ml-6 border-l-2 border-zinc-700 pl-3 text-xs text-zinc-500 animate-fade-in space-y-1">
-            {/* Custom message */}
-            {status.message && (
-              <p>{status.message}</p>
-            )}
-            
-            {/* Intent detected */}
-            {status.details?.intent && (
-              <p className="text-zinc-600">
-                Intent: <span className="text-zinc-400">{status.details.intent}</span>
-              </p>
-            )}
-            
-            {/* Security score (only show if concerning) */}
-            {status.details?.security_score !== undefined && status.details.security_score > 0.3 && (
-              <p className="text-amber-500">
-                ⚠️ Security check: {Math.round(status.details.security_score * 100)}%
-              </p>
-            )}
-            
-            {/* Tools being used */}
-            {status.details?.tools_used && status.details.tools_used.length > 0 && (
-              <p className="text-zinc-600">
-                Using: {status.details.tools_used.join(', ')}
-              </p>
-            )}
-            
-            {/* Model info */}
-            {status.details?.model && (
-              <p className="text-zinc-600">Model: {status.details.model}</p>
-            )}
-            
-            {/* Sources */}
-            {status.details?.sources && status.details.sources.length > 0 && (
-              <div className="mt-2 space-y-1">
-                <p className="text-zinc-500">Sources:</p>
-                {status.details.sources.map((source, idx) => (
-                  <p key={idx} className="text-zinc-600 pl-2">
-                    📄 {source.title}
-                  </p>
+        {/* Status Message */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            {status.message || config.label}
+          </p>
+          {status.details?.phase && status.details?.total_phases && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Step {status.details.phase} of {status.details.total_phases}
+            </p>
+          )}
+        </div>
+
+        {/* Expand Arrow */}
+        <ChevronRight
+          className={`w-4 h-4 text-gray-400 transition-transform ${
+            isExpanded ? 'rotate-90' : ''
+          }`}
+        />
+      </div>
+
+      {/* Expanded Details */}
+      {isExpanded && status.details && (
+        <div className="px-3 pb-3 pt-1 border-t border-gray-200 dark:border-gray-700 space-y-2">
+          {status.details.intent && (
+            <div className="text-xs">
+              <span className="text-gray-500 dark:text-gray-400">Intent:</span>{' '}
+              <span className="text-gray-700 dark:text-gray-300 font-medium">
+                {status.details.intent}
+              </span>
+            </div>
+          )}
+
+          {status.details.action && (
+            <div className="text-xs">
+              <span className="text-gray-500 dark:text-gray-400">Tool:</span>{' '}
+              <span className="text-gray-700 dark:text-gray-300 font-medium">
+                {status.details.action.replace(/_/g, ' ')}
+              </span>
+            </div>
+          )}
+
+          {status.details.model && (
+            <div className="text-xs">
+              <span className="text-gray-500 dark:text-gray-400">Model:</span>{' '}
+              <span className="text-gray-700 dark:text-gray-300 font-mono text-xs">
+                {status.details.model}
+              </span>
+            </div>
+          )}
+
+          {status.details.tools_used && status.details.tools_used.length > 0 && (
+            <div className="text-xs">
+              <span className="text-gray-500 dark:text-gray-400">Tools used:</span>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {status.details.tools_used.map((tool, idx) => (
+                  <span
+                    key={idx}
+                    className="px-2 py-0.5 rounded-full text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
+                  >
+                    {tool}
+                  </span>
                 ))}
               </div>
-            )}
-          </div>
-        )}
-        
-        {/* Progress bar for multi-phase */}
-        {status.details?.phase && status.details?.total_phases && status.status !== 'complete' && (
-          <div className="ml-6 w-32 h-1 bg-zinc-800 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
-              style={{ width: `${(status.details.phase / status.details.total_phases) * 100}%` }}
-            />
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
+            </div>
+          )}
 
-/**
- * Mini thinking indicator for inline use
- */
-export function MiniThinkingIndicator({ status }: { status: string }) {
-  const config = STATUS_CONFIG[status] || STATUS_CONFIG.generating
-  const Icon = config.icon
-  
-  return (
-    <span className="inline-flex items-center gap-1 text-xs text-zinc-500">
-      <Icon className={`h-3 w-3 ${config.color} animate-pulse`} />
-      <span className="animate-pulse-fade">{config.label}</span>
-    </span>
-  )
-}
+          {status.details.sources && status.details.sources.length > 0 && (
+            <div className="text-xs">
+              <span className="text-gray-500 dark:text-gray-400">Sources:</span>
+              <ul className="mt-1 space-y-1">
+                {status.details.sources.map((source, idx) => (
+                  <li
+                    key={idx}
+                    className="text-gray-700 dark:text-gray-300 flex items-start gap-1"
+                  >
+                    <span className="text-gray-400 mt-0.5">•</span>
+                    <span>{source.title}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-/**
- * Thinking steps display for detailed view
- */
-export function ThinkingSteps({ steps }: { steps: Array<{ phase: string; duration_ms: number; completed: boolean }> }) {
-  return (
-    <div className="space-y-1 text-xs">
-      {steps.map((step, idx) => {
-        const config = STATUS_CONFIG[step.phase] || STATUS_CONFIG.generating
-        const Icon = config.icon
-        
-        return (
-          <div key={idx} className="flex items-center gap-2 text-zinc-500">
-            <Icon className={`h-3 w-3 ${step.completed ? 'text-green-400' : config.color}`} />
-            <span className={step.completed ? 'text-zinc-400' : 'text-zinc-600'}>
-              {config.label}
-            </span>
-            {step.completed && step.duration_ms > 0 && (
-              <span className="text-zinc-600">({step.duration_ms.toFixed(0)}ms)</span>
-            )}
-          </div>
-        )
-      })}
+          {status.details.security_score !== undefined && (
+            <div className="text-xs">
+              <span className="text-gray-500 dark:text-gray-400">Security Score:</span>{' '}
+              <span
+                className={`font-medium ${
+                  status.details.security_score > 0.8
+                    ? 'text-green-600 dark:text-green-400'
+                    : status.details.security_score > 0.5
+                    ? 'text-yellow-600 dark:text-yellow-400'
+                    : 'text-red-600 dark:text-red-400'
+                }`}
+              >
+                {(status.details.security_score * 100).toFixed(0)}%
+              </span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
