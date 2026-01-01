@@ -20,6 +20,11 @@ export interface ThinkingStatus {
     | 'generating'
     | 'complete'
     | 'error'
+    | 'tool_iteration'
+    | 'calling_tools'
+    | 'executing_tool'
+    | 'tool_executed'
+    | 'tool_complete'
   message: string
   details?: {
     phase?: number
@@ -30,6 +35,8 @@ export interface ThinkingStatus {
     security_score?: number
     tools_used?: string[]
     action?: string
+    tool_name?: string
+    tool_args?: Record<string, unknown>
   }
 }
 
@@ -87,6 +94,26 @@ const STATUS_CONFIG: Record<string, { cursor: string; text: string }> = {
   error: {
     cursor: 'bg-red-600',
     text: 'text-red-700 dark:text-red-500',
+  },
+  tool_iteration: {
+    cursor: 'bg-violet-500',
+    text: 'text-violet-600 dark:text-violet-400',
+  },
+  calling_tools: {
+    cursor: 'bg-fuchsia-500',
+    text: 'text-fuchsia-600 dark:text-fuchsia-400',
+  },
+  executing_tool: {
+    cursor: 'bg-orange-500',
+    text: 'text-orange-600 dark:text-orange-400',
+  },
+  tool_executed: {
+    cursor: 'bg-lime-500',
+    text: 'text-lime-600 dark:text-lime-400',
+  },
+  tool_complete: {
+    cursor: 'bg-teal-500',
+    text: 'text-teal-600 dark:text-teal-400',
   },
 }
 
