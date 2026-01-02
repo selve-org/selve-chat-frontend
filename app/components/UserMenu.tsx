@@ -70,8 +70,35 @@ export default function UserMenu({ userName, userPlan, isSignedIn, signInUrl }: 
     }
   }, [isOpen])
 
+  // Clear all user-specific localStorage data on sign out
+  const clearUserData = () => {
+    if (typeof window !== 'undefined') {
+      // Clear all selve-related localStorage keys
+      const localStorageKeys = [
+        'selve_chat_anon_id',
+        'selve_signin_prompt_dismissed',
+        'selve_sidebar_open',
+        'selve_assessment_session',
+        'selve_device_fp',
+      ];
+      localStorageKeys.forEach(key => localStorage.removeItem(key));
+      
+      // Also clear any friend assessment keys (prefixed with friend_assessment_)
+      Object.keys(localStorage)
+        .filter(key => key.startsWith('friend_assessment_'))
+        .forEach(key => localStorage.removeItem(key));
+      
+      // Clear sessionStorage as well (chat session IDs, etc.)
+      const sessionStorageKeys = [
+        'currentSessionId',
+      ];
+      sessionStorageKeys.forEach(key => sessionStorage.removeItem(key));
+    }
+  };
+
   const handleSignOut = async () => {
     setIsOpen(false)
+    clearUserData() // Clear localStorage before signing out
     await signOut()
   }
 
