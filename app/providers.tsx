@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname, useSearchParams } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, Suspense } from "react"
 import posthog from 'posthog-js'
 import { PostHogProvider as PHProvider } from 'posthog-js/react'
 
@@ -31,7 +31,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <PHProvider client={posthog}>
-      <PostHogPageView />
+      <SuspendedPostHogPageView />
       {children}
     </PHProvider>
   )
@@ -52,4 +52,14 @@ function PostHogPageView() {
   }, [pathname, searchParams])
 
   return null
+}
+
+// Wrap PostHogPageView in Suspense to avoid de-opting the whole app into client-side rendering
+// See: https://nextjs.org/docs/messages/deopted-into-client-rendering
+function SuspendedPostHogPageView() {
+  return (
+    <Suspense fallback={null}>
+      <PostHogPageView />
+    </Suspense>
+  )
 }
