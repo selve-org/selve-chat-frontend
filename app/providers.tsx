@@ -5,20 +5,23 @@ import { useEffect, Suspense } from "react"
 import posthog from 'posthog-js'
 import { PostHogProvider as PHProvider } from 'posthog-js/react'
 
-export function PostHogProvider({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    const key = process.env.NEXT_PUBLIC_POSTHOG_KEY as string | undefined;
-    if (!key) {
-      console.warn("PostHog key missing; analytics disabled.");
-      return;
-    }
-
+// Initialize PostHog outside component to avoid race conditions
+if (typeof window !== 'undefined') {
+  const key = process.env.NEXT_PUBLIC_POSTHOG_KEY as string | undefined;
+  
+  // Debug logging
+  console.log('[PostHog Chatbot Debug] Key Length:', key?.length);
+  console.log('[PostHog Chatbot Debug] Key Start:', key?.substring(0, 8));
+  console.log('[PostHog Chatbot Debug] Key Format Valid:', key?.startsWith('phc_'));
+  
+  if (key) {
     posthog.init(key, {
       api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
       person_profiles: 'identified_only',
       capture_pageview: false,
-      loaded: (posthog) => {
-        if (process.env.NODE_ENV === 'development') posthog.debug();
+      loaded: (ph) => {
+        console.log('[PostHog Chatbot Debug] Successfully initialized');
+        if (process.env.NODE_ENV === 'development') ph.debug();
       },
     });
 
@@ -27,7 +30,12 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       app_name: 'chatbot',
       app_domain: 'chat.selve.me',
     });
-  }, [])
+  } else {
+    console.warn('[PostHog Chatbot Debug] Key missing; analytics disabled.');
+  }
+}
+
+export function PostHogProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <PHProvider client={posthog}>
