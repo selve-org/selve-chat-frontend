@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ConsoleBrand } from "./components/ConsoleBrand";
 import { ThemeProvider } from "./components/ThemeProvider";
+import { PostHogProvider } from "./providers";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -68,9 +69,11 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white min-h-screen`}
         >
-          <ThemeProvider>
-            <ConsoleBrand>{children}</ConsoleBrand>
-          </ThemeProvider>
+          <PostHogProvider>
+            <ThemeProvider>
+              <ConsoleBrand>{children}</ConsoleBrand>
+            </ThemeProvider>
+          </PostHogProvider>
         </body>
       </html>
     </ClerkProvider>
