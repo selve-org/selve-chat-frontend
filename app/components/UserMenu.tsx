@@ -136,13 +136,13 @@ export default function UserMenu({ userName, userPlan, isSignedIn, signInUrl }: 
       {/* User Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-3 rounded-lg bg-[#151412] px-3 py-3 transition-all hover:bg-[#1a1917] w-full"
+        className="flex items-center gap-3 rounded-lg bg-zinc-100 dark:bg-[#151412] px-3 py-3 transition-all hover:bg-zinc-200 dark:hover:bg-[#1a1917] w-full cursor-pointer"
       >
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#b88dff] via-[#7f5af0] to-[#5f3bd8] text-sm font-semibold text-white">
           {userInitials}
         </div>
         <div className="min-w-0 flex-1 text-left">
-          <div className="truncate text-sm font-semibold text-white">{userName || user?.fullName || 'SELVE User'}</div>
+          <div className="truncate text-sm font-semibold text-zinc-900 dark:text-white">{userName || user?.fullName || 'SELVE User'}</div>
           <div className="truncate text-xs text-zinc-500">{userPlan || 'Pro plan'}</div>
         </div>
       </button>
@@ -157,11 +157,11 @@ export default function UserMenu({ userName, userPlan, isSignedIn, signInUrl }: 
           />
 
           {/* Menu */}
-          <div className="absolute bottom-full left-0 right-0 mb-2 w-full min-w-[260px] rounded-xl border border-[#2c261f] bg-[#1a1917] shadow-2xl shadow-black/40 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="absolute bottom-full left-0 right-0 mb-2 w-full min-w-[260px] rounded-xl border border-zinc-200 dark:border-[#2c261f] bg-white dark:bg-[#1a1917] shadow-2xl shadow-black/20 dark:shadow-black/40 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
             {/* Theme Settings */}
-            <div className="border-b border-[#2c261f] p-3">
-              <p className="mb-2 px-2 text-xs font-medium text-zinc-400">Appearance</p>
-              <div className="flex gap-1 rounded-lg bg-[#151412] p-1">
+            <div className="border-b border-zinc-200 dark:border-[#2c261f] p-3">
+              <p className="mb-2 px-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">Appearance</p>
+              <div className="flex gap-1 rounded-lg bg-zinc-100 dark:bg-[#151412] p-1">
                 {themeOptions.map((option) => {
                   const Icon = option.icon
                   const isActive = mounted && theme === option.id
@@ -172,7 +172,7 @@ export default function UserMenu({ userName, userPlan, isSignedIn, signInUrl }: 
                       className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-1.5 py-1.5 text-xs font-medium transition-all ${
                         isActive
                           ? 'bg-[#de6b35] text-white shadow-sm'
-                          : 'text-zinc-400 hover:bg-[#1a1917] hover:text-white'
+                          : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-[#1a1917] hover:text-zinc-900 dark:hover:text-white'
                       }`}
                     >
                       <Icon className="h-3.5 w-3.5 shrink-0" />
@@ -187,21 +187,21 @@ export default function UserMenu({ userName, userPlan, isSignedIn, signInUrl }: 
             <div className="py-1">
               {/* My Assessment Results */}
               <a
-                href={assessmentSessionId 
+                href={assessmentSessionId
                   ? `${mainAppUrl}/results/${assessmentSessionId}`
                   : `${mainAppUrl}/profile`
                 }
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-300 transition-colors hover:bg-[#22201d] group"
+                className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 transition-colors hover:bg-zinc-100 dark:hover:bg-[#22201d] group"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#151412] transition-colors group-hover:bg-[#2c261f]">
-                  <BarChart3 className="h-4 w-4 text-zinc-400 group-hover:text-[#de6b35]" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100 dark:bg-[#151412] transition-colors group-hover:bg-zinc-200 dark:group-hover:bg-[#2c261f]">
+                  <BarChart3 className="h-4 w-4 text-zinc-500 dark:text-zinc-400 group-hover:text-[#de6b35]" />
                 </div>
                 <div className="flex flex-1 items-center justify-between">
                   <span className="font-medium">My Assessment Results</span>
-                  <ExternalLink className="h-3.5 w-3.5 text-zinc-500" />
+                  <ExternalLink className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
                 </div>
               </a>
 
@@ -211,14 +211,14 @@ export default function UserMenu({ userName, userPlan, isSignedIn, signInUrl }: 
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-300 transition-colors hover:bg-[#22201d] group"
+                className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 transition-colors hover:bg-zinc-100 dark:hover:bg-[#22201d] group"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#151412] transition-colors group-hover:bg-[#2c261f]">
-                  <DollarSign className="h-4 w-4 text-zinc-400 group-hover:text-[#de6b35]" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100 dark:bg-[#151412] transition-colors group-hover:bg-zinc-200 dark:group-hover:bg-[#2c261f]">
+                  <DollarSign className="h-4 w-4 text-zinc-500 dark:text-zinc-400 group-hover:text-[#de6b35]" />
                 </div>
                 <div className="flex flex-1 items-center justify-between">
                   <span className="font-medium">Pricing & Plans</span>
-                  <ExternalLink className="h-3.5 w-3.5 text-zinc-500" />
+                  <ExternalLink className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
                 </div>
               </a>
 
@@ -228,28 +228,28 @@ export default function UserMenu({ userName, userPlan, isSignedIn, signInUrl }: 
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-300 transition-colors hover:bg-[#22201d] group"
+                className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 transition-colors hover:bg-zinc-100 dark:hover:bg-[#22201d] group"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#151412] transition-colors group-hover:bg-[#2c261f]">
-                  <Settings className="h-4 w-4 text-zinc-400 group-hover:text-[#de6b35]" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100 dark:bg-[#151412] transition-colors group-hover:bg-zinc-200 dark:group-hover:bg-[#2c261f]">
+                  <Settings className="h-4 w-4 text-zinc-500 dark:text-zinc-400 group-hover:text-[#de6b35]" />
                 </div>
                 <div className="flex flex-1 items-center justify-between">
                   <span className="font-medium">Settings</span>
-                  <ExternalLink className="h-3.5 w-3.5 text-zinc-500" />
+                  <ExternalLink className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
                 </div>
               </a>
             </div>
 
             {/* Divider */}
-            <div className="border-t border-[#2c261f]" />
+            <div className="border-t border-zinc-200 dark:border-[#2c261f]" />
 
             {/* Sign Out */}
             <div className="p-2">
               <button
                 onClick={handleSignOut}
-                className="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-red-400 transition-colors hover:bg-red-950/20 group"
+                className="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-red-500 dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-950/20 group"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-950/20 transition-colors group-hover:bg-red-900/30">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 dark:bg-red-950/20 transition-colors group-hover:bg-red-100 dark:group-hover:bg-red-900/30">
                   <LogOut className="h-4 w-4" />
                 </div>
                 <span className="font-medium">Sign out</span>

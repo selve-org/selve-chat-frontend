@@ -15,13 +15,13 @@ export default function TopBar({
   showMenuButton = true,
 }: TopBarProps) {
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-zinc-900/70 bg-[radial-gradient(circle_at_20%_0%,rgba(222,107,53,0.08),transparent_35%),#0f0f0e] px-4">
+    <header className="flex h-14 shrink-0 items-center justify-between bg-zinc-50 dark:bg-[#0f0f0e] px-4">
       {/* Left side */}
       <div className="flex items-center gap-4">
         {showMenuButton && (
           <button
             onClick={onMenuClick}
-            className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-[#1a1917] hover:text-white lg:hidden"
+            className="rounded-lg p-2 text-zinc-500 dark:text-zinc-400 transition-colors hover:bg-zinc-200 dark:hover:bg-[#1a1917] hover:text-zinc-900 dark:hover:text-white lg:hidden"
             aria-label="Toggle sidebar"
           >
             <Menu className="h-5 w-5" />

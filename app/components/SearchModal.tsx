@@ -157,9 +157,9 @@ export default function SearchModal({
             transition={{ duration: 0.2 }}
             className="fixed left-1/2 top-[10%] z-50 w-full max-w-2xl -translate-x-1/2"
           >
-            <div className="mx-4 rounded-2xl border border-zinc-800 bg-[#0f0f0e] shadow-2xl">
+            <div className="mx-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0f0f0e] shadow-2xl">
               {/* Header with Search Input */}
-              <div className="border-b border-zinc-800 p-4">
+              <div className="border-b border-zinc-200 dark:border-zinc-800 p-4">
                 <div className="flex items-center gap-3">
                   <Search className="h-5 w-5 shrink-0 text-zinc-400" />
                   <input
@@ -168,11 +168,11 @@ export default function SearchModal({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search chats..."
-                    className="flex-1 bg-transparent text-base text-white placeholder-zinc-500 focus:outline-none"
+                    className="flex-1 bg-transparent text-base text-zinc-900 dark:text-white placeholder-zinc-500 focus:outline-none"
                   />
                   <button
                     onClick={() => searchQuery ? setSearchQuery('') : onClose()}
-                    className="shrink-0 rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
+                    className="shrink-0 rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white"
                     aria-label={searchQuery ? "Clear search" : "Close search"}
                   >
                     <X className="h-5 w-5" />
@@ -184,8 +184,8 @@ export default function SearchModal({
               <div className="max-h-[60vh] overflow-y-auto">
                 {displayResults.length > 0 ? (
                   <div className="p-2">
-                    <div className="sticky top-0 z-10 mb-2 bg-[#0f0f0e] px-3 py-2 text-xs font-medium text-zinc-500">
-                      {displayResults.length} result{displayResults.length !== 1 ? 's' : ''} 
+                    <div className="sticky top-0 z-10 mb-2 bg-white dark:bg-[#0f0f0e] px-3 py-2 text-xs font-medium text-zinc-500">
+                      {displayResults.length} result{displayResults.length !== 1 ? 's' : ''}
                       {searchQuery.trim() && ` for "${searchQuery}"`}
                       {isSearching && ' (searching...)'}
                     </div>
@@ -194,14 +194,14 @@ export default function SearchModal({
                         <button
                           key={session.id}
                           onClick={() => handleSessionClick(session.id)}
-                          className="flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-zinc-800/50"
+                          className="flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800/50"
                         >
                           <div className="flex-1 space-y-1">
-                            <div className="font-medium text-white">
+                            <div className="font-medium text-zinc-900 dark:text-white">
                               {session.title}
                             </div>
                             {session.matchingContent && (
-                              <div className="text-sm text-zinc-400 line-clamp-2">
+                              <div className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2">
                                 {session.matchingContent}
                               </div>
                             )}
@@ -215,13 +215,13 @@ export default function SearchModal({
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <Search className="mb-3 h-12 w-12 text-zinc-600" />
-                    <p className="text-base font-medium text-zinc-400">
+                    <Search className="mb-3 h-12 w-12 text-zinc-400 dark:text-zinc-600" />
+                    <p className="text-base font-medium text-zinc-500 dark:text-zinc-400">
                       {searchQuery.trim() ? (isSearching ? 'Searching...' : 'No results found') : 'Start typing to search'}
                     </p>
-                    <p className="mt-1 text-sm text-zinc-600">
-                      {searchQuery.trim() 
-                        ? 'Try different keywords' 
+                    <p className="mt-1 text-sm text-zinc-400 dark:text-zinc-600">
+                      {searchQuery.trim()
+                        ? 'Try different keywords'
                         : 'Search through your chat history'}
                     </p>
                   </div>

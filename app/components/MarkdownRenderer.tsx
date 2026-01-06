@@ -70,21 +70,21 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
     // Headers
     processed = processed.replace(
       /^### (.+)$/gm,
-      '<h3 class="text-lg font-semibold mt-4 mb-2 text-white">$1</h3>'
+      '<h3 class="text-lg font-semibold mt-4 mb-2 text-zinc-900 dark:text-white">$1</h3>'
     )
     processed = processed.replace(
       /^## (.+)$/gm,
-      '<h2 class="text-xl font-semibold mt-5 mb-3 text-white">$1</h2>'
+      '<h2 class="text-xl font-semibold mt-5 mb-3 text-zinc-900 dark:text-white">$1</h2>'
     )
     processed = processed.replace(
       /^# (.+)$/gm,
-      '<h1 class="text-2xl font-bold mt-6 mb-4 text-white">$1</h1>'
+      '<h1 class="text-2xl font-bold mt-6 mb-4 text-zinc-900 dark:text-white">$1</h1>'
     )
 
     // Blockquotes
     processed = processed.replace(
       /^> (.+)$/gm,
-      '<blockquote class="border-l-4 border-purple-500 pl-4 py-2 my-4 italic text-zinc-300 bg-zinc-800/30 rounded-r">$1</blockquote>'
+      '<blockquote class="border-l-4 border-purple-500 pl-4 py-2 my-4 italic text-zinc-700 dark:text-zinc-300 bg-zinc-200/50 dark:bg-zinc-800/30 rounded-r">$1</blockquote>'
     )
 
     // Tables
@@ -93,7 +93,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       const headers = header
         .split('|')
         .filter((h: string) => h.trim())
-        .map((h: string) => `<th class="px-4 py-2 text-left font-semibold border-b border-zinc-700">${h.trim()}</th>`)
+        .map((h: string) => `<th class="px-4 py-2 text-left font-semibold border-b border-zinc-300 dark:border-zinc-700">${h.trim()}</th>`)
         .join('')
 
       const rowsHtml = rows
@@ -103,13 +103,13 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
           const cells = row
             .split('|')
             .filter((c: string) => c.trim())
-            .map((c: string) => `<td class="px-4 py-2 border-b border-zinc-800">${c.trim()}</td>`)
+            .map((c: string) => `<td class="px-4 py-2 border-b border-zinc-200 dark:border-zinc-800">${c.trim()}</td>`)
             .join('')
           return `<tr>${cells}</tr>`
         })
         .join('')
 
-      return `<table class="w-full my-4 border-collapse bg-zinc-900/50 rounded-lg overflow-hidden"><thead><tr class="bg-zinc-800">${headers}</tr></thead><tbody>${rowsHtml}</tbody></table>`
+      return `<table class="w-full my-4 border-collapse bg-zinc-100/50 dark:bg-zinc-900/50 rounded-lg overflow-hidden"><thead><tr class="bg-zinc-200 dark:bg-zinc-800">${headers}</tr></thead><tbody>${rowsHtml}</tbody></table>`
     })
 
     // Unordered lists
@@ -129,15 +129,15 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
     )
 
     // Bold
-    processed = processed.replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-white">$1</strong>')
+    processed = processed.replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-zinc-900 dark:text-white">$1</strong>')
 
     // Italic
-    processed = processed.replace(/\*(.+?)\*/g, '<em class="italic text-zinc-300">$1</em>')
+    processed = processed.replace(/\*(.+?)\*/g, '<em class="italic text-zinc-700 dark:text-zinc-300">$1</em>')
 
     // Inline code
     processed = processed.replace(
       /`([^`]+)`/g,
-      '<code class="bg-zinc-800 text-pink-400 px-1.5 py-0.5 rounded text-sm font-mono">$1</code>'
+      '<code class="bg-zinc-200 dark:bg-zinc-800 text-pink-600 dark:text-pink-400 px-1.5 py-0.5 rounded text-sm font-mono">$1</code>'
     )
 
     // Links
@@ -147,7 +147,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
     )
 
     // Horizontal rules
-    processed = processed.replace(/^---$/gm, '<hr class="my-6 border-zinc-700" />')
+    processed = processed.replace(/^---$/gm, '<hr class="my-6 border-zinc-300 dark:border-zinc-700" />')
 
     // Paragraphs
     processed = processed.replace(/^(?!<[hul>tb]|<\/[hul>tb])(.+)$/gm, '<p class="my-3 leading-relaxed">$1</p>')
@@ -156,7 +156,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
   }
 
   return (
-    <div className={`selve-markdown prose prose-invert max-w-none ${className}`}>
+    <div className={`selve-markdown prose dark:prose-invert max-w-none ${className}`}>
       {renderMarkdown(content)}
     </div>
   )

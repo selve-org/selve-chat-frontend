@@ -88,9 +88,9 @@ export default function ChatMessages({
   }, [messages])
 
   return (
-    <div className="space-y-6 py-6">
+    <div className="space-y-6 py-6" role="log" aria-live="polite" aria-label="Chat messages">
       {messages.map((message, index) => (
-        <div key={message.id || index} className="group">
+        <div key={message.id || index} className="group" role="article" aria-label={`${message.role === 'user' ? 'User' : 'Assistant'} message`}>
           {message.role === 'user' ? (
             <div className="flex justify-end">
               <div className={`${editingMessageIndex === index ? 'w-full' : 'max-w-[70%]'} space-y-1`}>
@@ -99,19 +99,21 @@ export default function ChatMessages({
                     <textarea
                       value={editingContent}
                       onChange={(e) => onEditingContentChange?.(e.target.value)}
-                      className="w-full min-h-[100px] rounded-2xl bg-[#1a1a1a] border border-zinc-700 px-4 py-3 text-sm text-white focus:border-purple-500 focus:outline-none resize-y"
+                      className="w-full min-h-[100px] rounded-2xl bg-zinc-100 dark:bg-[#1a1a1a] border border-zinc-300 dark:border-zinc-700 px-4 py-3 text-sm text-zinc-900 dark:text-white focus:border-purple-500 focus:outline-none resize-y"
                       autoFocus
                     />
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={onCancelEdit}
-                        className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
+                        className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
+                        aria-label="Cancel editing"
                       >
                         Cancel
                       </button>
                       <button
                         onClick={onSaveEdit}
-                        className="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                        className="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors cursor-pointer"
+                        aria-label="Save edited message"
                       >
                         Save
                       </button>
@@ -135,7 +137,7 @@ export default function ChatMessages({
           ) : (
             <div className="flex justify-start">
               <div className="w-full space-y-1">
-                <div className="rounded-2xl px-4 py-3 text-sm leading-relaxed text-[#f4f0e6]">
+                <div className="rounded-2xl px-4 py-3 text-sm leading-relaxed text-zinc-800 dark:text-[#f4f0e6]">
                   <MarkdownRenderer content={message.content} />
                 </div>
                 <MessageActions
@@ -155,11 +157,11 @@ export default function ChatMessages({
       {/* Streaming content with typewriter effect */}
       {displayContent && (
         <div className="flex justify-start">
-          <div className="w-full rounded-2xl px-4 py-3 text-[#f4f0e6]">
+          <div className="w-full rounded-2xl px-4 py-3 text-zinc-800 dark:text-[#f4f0e6]">
             <MarkdownRenderer content={displayContent} />
             {showCursor && (
-              <span 
-                className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-zinc-50"
+              <span
+                className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-zinc-800 dark:bg-zinc-50"
                 aria-hidden="true"
               />
             )}
@@ -178,11 +180,11 @@ export default function ChatMessages({
       {/* Fallback loading dots */}
       {isLoading && !displayContent && !thinkingStatus && (
         <div className="flex justify-start">
-          <div className="max-w-[80%] rounded-2xl bg-[#131210] px-4 py-3">
+          <div className="max-w-[80%] rounded-2xl bg-zinc-200 dark:bg-[#131210] px-4 py-3">
             <div className="flex space-x-2">
-              <div className="h-2 w-2 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.3s]" />
-              <div className="h-2 w-2 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.15s]" />
-              <div className="h-2 w-2 animate-bounce rounded-full bg-zinc-400" />
+              <div className="h-2 w-2 animate-bounce rounded-full bg-zinc-500 dark:bg-zinc-400 [animation-delay:-0.3s]" />
+              <div className="h-2 w-2 animate-bounce rounded-full bg-zinc-500 dark:bg-zinc-400 [animation-delay:-0.15s]" />
+              <div className="h-2 w-2 animate-bounce rounded-full bg-zinc-500 dark:bg-zinc-400" />
             </div>
           </div>
         </div>

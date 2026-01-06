@@ -48,7 +48,7 @@ export default function MessageActions({
   const showNavigation = totalRegenerations && totalRegenerations > 1
 
   return (
-    <div className={`flex items-center gap-1 transition-opacity ${isVisible ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+    <div className={`flex items-center gap-1 pl-4 transition-opacity ${isVisible ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} role="toolbar" aria-label="Message actions">
       {/* Navigation for multiple regenerations */}
       {showNavigation && onNavigateRegenerations && (
         <>
@@ -56,22 +56,24 @@ export default function MessageActions({
             onClick={() => onNavigateRegenerations('prev')}
             disabled={regenerationIndex === 1}
             title="Previous response"
-            className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300 disabled:cursor-not-allowed disabled:opacity-30"
+            aria-label="Previous response"
+            className="rounded-md p-1.5 text-zinc-500 dark:text-zinc-500 transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-300 disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer"
           >
-            <ChevronLeft className="h-3.5 w-3.5" />
+            <ChevronLeft className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </button>
-          <span className="px-1 text-xs text-zinc-500">
+          <span className="px-1 text-xs text-zinc-500 dark:text-zinc-500" aria-live="polite">
             {regenerationIndex}/{totalRegenerations}
           </span>
           <button
             onClick={() => onNavigateRegenerations('next')}
             disabled={regenerationIndex === totalRegenerations}
             title="Next response"
-            className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300 disabled:cursor-not-allowed disabled:opacity-30"
+            aria-label="Next response"
+            className="rounded-md p-1.5 text-zinc-500 dark:text-zinc-500 transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-300 disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer"
           >
-            <ChevronRight className="h-3.5 w-3.5" />
+            <ChevronRight className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </button>
-          <div className="mx-1 h-3.5 w-px bg-zinc-700" />
+          <div className="mx-1 h-3.5 w-px bg-zinc-300 dark:bg-zinc-700" />
         </>
       )}
 
@@ -79,12 +81,13 @@ export default function MessageActions({
       <button
         onClick={handleCopy}
         title={copied ? 'Copied!' : 'Copy message'}
-        className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+        aria-label={copied ? 'Copied!' : 'Copy message'}
+        className="rounded-md p-1.5 text-zinc-500 dark:text-zinc-500 transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-300 cursor-pointer"
       >
         {copied ? (
-          <Check className="h-3.5 w-3.5 text-green-400" />
+          <Check className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-500 dark:text-green-400" aria-hidden="true" />
         ) : (
-          <Copy className="h-3.5 w-3.5" />
+          <Copy className="h-3.5 w-3.5 md:h-4 md:w-4" aria-hidden="true" />
         )}
       </button>
 
@@ -94,9 +97,10 @@ export default function MessageActions({
           onClick={onRegenerate}
           disabled={isRegenerating}
           title="Regenerate response"
-          className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300 disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label="Regenerate response"
+          className="rounded-md p-1.5 text-zinc-500 dark:text-zinc-500 transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-300 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
         >
-          <RefreshCw className={`h-3.5 w-3.5 ${isRegenerating ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-3.5 w-3.5 md:h-4 md:w-4 ${isRegenerating ? 'animate-spin' : ''}`} aria-hidden="true" />
         </button>
       )}
 
@@ -107,13 +111,15 @@ export default function MessageActions({
             onClick={() => handleFeedback('helpful')}
             disabled={feedbackGiven !== null}
             title="Helpful"
+            aria-label="Mark as helpful"
+            aria-pressed={feedbackGiven === 'helpful'}
             className={`rounded-md p-1.5 transition-colors ${
               feedbackGiven === 'helpful'
-                ? 'bg-green-900/30 text-green-400'
-                : 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
-            } disabled:cursor-not-allowed disabled:opacity-50`}
+                ? 'text-green-600 dark:text-green-400'
+                : 'text-zinc-500 dark:text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-300'
+            } disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer`}
           >
-            <ThumbsUp className="h-3.5 w-3.5" />
+            <ThumbsUp className={`h-3.5 w-3.5 md:h-4 md:w-4 ${feedbackGiven === 'helpful' ? 'fill-current' : ''}`} aria-hidden="true" />
           </button>
 
           {/* Not Helpful */}
@@ -121,13 +127,15 @@ export default function MessageActions({
             onClick={() => handleFeedback('not_helpful')}
             disabled={feedbackGiven !== null}
             title="Not helpful"
+            aria-label="Mark as not helpful"
+            aria-pressed={feedbackGiven === 'not_helpful'}
             className={`rounded-md p-1.5 transition-colors ${
               feedbackGiven === 'not_helpful'
-                ? 'bg-red-900/30 text-red-400'
-                : 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
-            } disabled:cursor-not-allowed disabled:opacity-50`}
+                ? 'text-red-600 dark:text-red-400'
+                : 'text-zinc-500 dark:text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-300'
+            } disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer`}
           >
-            <ThumbsDown className="h-3.5 w-3.5" />
+            <ThumbsDown className={`h-3.5 w-3.5 md:h-4 md:w-4 ${feedbackGiven === 'not_helpful' ? 'fill-current' : ''}`} aria-hidden="true" />
           </button>
         </>
       )}
@@ -154,15 +162,16 @@ export function UserMessageActions({ content, onEdit }: UserMessageActionsProps)
   }
 
   return (
-    <div className={`flex items-center gap-1 transition-opacity ${copied ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+    <div className={`flex items-center gap-1 mt-1 transition-opacity ${copied ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} role="toolbar" aria-label="Message actions">
       {/* Edit */}
       {onEdit && (
         <button
           onClick={onEdit}
           title="Edit message"
-          className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+          aria-label="Edit message"
+          className="rounded-md p-1.5 text-zinc-500 dark:text-zinc-500 transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-300 cursor-pointer"
         >
-          <Pencil className="h-3.5 w-3.5" />
+          <Pencil className="h-3.5 w-3.5 md:h-4 md:w-4" aria-hidden="true" />
         </button>
       )}
 
@@ -170,12 +179,13 @@ export function UserMessageActions({ content, onEdit }: UserMessageActionsProps)
       <button
         onClick={handleCopy}
         title={copied ? 'Copied!' : 'Copy message'}
-        className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+        aria-label={copied ? 'Copied!' : 'Copy message'}
+        className="rounded-md p-1.5 text-zinc-500 dark:text-zinc-500 transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-300 cursor-pointer"
       >
         {copied ? (
-          <Check className="h-3.5 w-3.5 text-green-400" />
+          <Check className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-500 dark:text-green-400" aria-hidden="true" />
         ) : (
-          <Copy className="h-3.5 w-3.5" />
+          <Copy className="h-3.5 w-3.5 md:h-4 md:w-4" aria-hidden="true" />
         )}
       </button>
     </div>

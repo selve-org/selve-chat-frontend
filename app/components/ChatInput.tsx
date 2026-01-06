@@ -31,7 +31,7 @@ export default function ChatInput({
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { currentPlaceholder, nextPlaceholder, isTransitioning } = usePlaceholderRotation(3000)
-  
+
   // Static placeholder after first message
   const staticPlaceholder = "What's on your mind?"
 
@@ -60,7 +60,7 @@ export default function ChatInput({
   }, [value])
 
   return (
-    <footer className="border-t border-[#1f1e1c] bg-[#0f0f0e] px-4 py-4">
+    <footer className="border-t border-zinc-200 dark:border-[#1f1e1c] bg-zinc-50 dark:bg-[#0f0f0e] px-4 py-4">
       <div className="mx-auto w-full max-w-4xl space-y-3 px-2 sm:px-8 md:px-10 lg:px-12">
         {/* Suggestion chips */}
         {suggestions.length > 0 && !value && (
@@ -69,7 +69,8 @@ export default function ChatInput({
               <button
                 key={idx}
                 onClick={() => onSuggestionClick?.(suggestion)}
-                className="rounded-full border border-[#2c261f] bg-[#1a1917] px-4 py-2 text-sm text-zinc-200 transition-colors hover:border-[#3a3127] hover:bg-[#22201d]"
+                className="rounded-full border border-zinc-300 dark:border-[#2c261f] bg-white dark:bg-[#1a1917] px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200 transition-colors hover:border-zinc-400 dark:hover:border-[#3a3127] hover:bg-zinc-100 dark:hover:bg-[#22201d] cursor-pointer"
+                aria-label={`Suggestion: ${suggestion}`}
               >
                 {suggestion}
               </button>
@@ -79,7 +80,7 @@ export default function ChatInput({
 
         {/* Input area */}
         <form onSubmit={onSubmit} className="relative">
-          <div className="flex items-end gap-3 rounded-3xl border border-[#24221f] bg-[#1a1917] px-4 py-2 focus-within:border-[#9d7bff] focus-within:ring-2 focus-within:ring-[#9d7bff]/25">
+          <div className="flex items-end gap-3 rounded-3xl border border-zinc-300 dark:border-[#24221f] bg-white dark:bg-[#1a1917] px-4 py-2 focus-within:border-[#9d7bff] focus-within:ring-2 focus-within:ring-[#9d7bff]/25 shadow-sm dark:shadow-none">
             {/* Textarea */}
             <div className="relative flex-1">
               <textarea
@@ -93,7 +94,7 @@ export default function ChatInput({
                 placeholder=" "
                 disabled={isLoading || isBanned}
                 rows={1}
-                className="max-h-[200px] min-h-[44px] w-full resize-none bg-transparent py-3 text-sm leading-5 text-zinc-100 placeholder-transparent focus:outline-none disabled:text-zinc-400"
+                className="max-h-[200px] min-h-[44px] w-full resize-none bg-transparent py-3 text-sm leading-5 text-zinc-900 dark:text-zinc-100 placeholder-transparent focus:outline-none disabled:text-zinc-400"
               />
               {/* Animated placeholder overlay (welcome screen only) */}
               {!value && !isBanned && !hasMessages && (
@@ -101,7 +102,7 @@ export default function ChatInput({
                   {/* Current text sliding down */}
                   <span
                     key={`current-${currentPlaceholder}`}
-                    className={`absolute text-sm leading-5 text-zinc-500 ${isTransitioning ? 'animate-slide-down' : ''}`}
+                    className={`absolute text-sm leading-5 text-zinc-400 dark:text-zinc-500 ${isTransitioning ? 'animate-slide-down' : ''}`}
                   >
                     {currentPlaceholder}
                   </span>
@@ -109,7 +110,7 @@ export default function ChatInput({
                   {isTransitioning && (
                     <span
                       key={`next-${nextPlaceholder}`}
-                      className="absolute text-sm leading-5 text-zinc-500 animate-slide-up"
+                      className="absolute text-sm leading-5 text-zinc-400 dark:text-zinc-500 animate-slide-up"
                     >
                       {nextPlaceholder}
                     </span>
@@ -119,14 +120,14 @@ export default function ChatInput({
               {/* Static placeholder (after first message) */}
               {!value && !isBanned && hasMessages && (
                 <div className="pointer-events-none absolute inset-0 flex items-center">
-                  <span className="text-sm leading-5 text-zinc-500">
+                  <span className="text-sm leading-5 text-zinc-400 dark:text-zinc-500">
                     {staticPlaceholder}
                   </span>
                 </div>
               )}
               {!value && isBanned && (
                 <div className="pointer-events-none absolute inset-0 flex items-center">
-                  <span className="text-sm leading-5 text-zinc-500">SELVE is unavailable</span>
+                  <span className="text-sm leading-5 text-zinc-400 dark:text-zinc-500">SELVE is unavailable</span>
                 </div>
               )}
             </div>
@@ -135,10 +136,10 @@ export default function ChatInput({
             <button
               type="submit"
               disabled={!value.trim() || isLoading || isBanned}
-              className="shrink-0 rounded-xl bg-gradient-to-br from-[#b88dff] via-[#9d7bff] to-[#7f5af0] p-2.5 text-white transition-all hover:brightness-110 disabled:from-[#3f2f66] disabled:via-[#3f2f66] disabled:to-[#3f2f66] disabled:text-zinc-500"
+              className="shrink-0 rounded-xl bg-gradient-to-br from-[#b88dff] via-[#9d7bff] to-[#7f5af0] p-2.5 text-white transition-all enabled:hover:brightness-110 enabled:cursor-pointer disabled:from-zinc-300 disabled:via-zinc-300 disabled:to-zinc-300 dark:disabled:from-[#3f2f66] dark:disabled:via-[#3f2f66] dark:disabled:to-[#3f2f66] disabled:text-zinc-400 dark:disabled:text-zinc-500"
               aria-label="Send message"
             >
-              <ArrowUp className="h-5 w-5" />
+              <ArrowUp className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
         </form>
@@ -150,7 +151,7 @@ export default function ChatInput({
               Access restricted. Try again at {new Date(banExpiresAt).toLocaleString()}
             </span>
           ) : (
-            <span className="hidden text-zinc-500 md:inline">Press Enter to send, Shift+Enter for new line</span>
+            <span className="hidden text-zinc-400 dark:text-zinc-500 md:inline">Press Enter to send, Shift+Enter for new line</span>
           )}
         </div>
       </div>

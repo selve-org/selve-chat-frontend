@@ -69,13 +69,13 @@ export default function Sidebar({
   const groupedSessions = React.useMemo(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    
+
     const yesterday = new Date(today)
     yesterday.setDate(yesterday.getDate() - 1)
-    
+
     const lastWeek = new Date(today)
     lastWeek.setDate(lastWeek.getDate() - 7)
-    
+
     const groups: { label: string; sessions: Session[] }[] = [
       { label: 'Today', sessions: [] },
       { label: 'Yesterday', sessions: [] },
@@ -116,20 +116,20 @@ export default function Sidebar({
         initial={false}
         animate={isOpen ? 'open' : 'closed'}
         variants={sidebarVariants}
-        className="fixed left-0 top-0 z-50 flex h-full w-64 flex-col border-r border-[#1f1e1c] bg-[#111110]"
+        className="fixed left-0 top-0 z-50 flex h-full w-64 flex-col border-r border-zinc-200 dark:border-[#1f1e1c] bg-zinc-50 dark:bg-[#111110]"
       >
         {/* Header */}
-        <div className="flex items-center gap-3 border-b border-[#1f1e1c] px-4 py-3">
+        <div className="flex items-center gap-3 border-b border-zinc-200 dark:border-[#1f1e1c] px-4 py-3">
           <a
             href={homeUrl}
-            className="rounded-lg p-1 transition-colors hover:bg-[#1a1917]"
+            className="rounded-lg p-1 transition-colors hover:bg-zinc-200 dark:hover:bg-[#1a1917]"
             aria-label="SELVE-Chat homepage"
           >
             <SelveLogo />
           </a>
           <button
             onClick={onToggle}
-            className="ml-auto flex items-center justify-center rounded-lg p-2 text-white transition-colors hover:bg-[#1a1917]"
+            className="ml-auto flex items-center justify-center rounded-lg p-2 text-zinc-700 dark:text-white transition-colors hover:bg-zinc-200 dark:hover:bg-[#1a1917] cursor-pointer"
             aria-label="Toggle sidebar"
           >
             <AnimatedHamburgerIcon isOpen={isOpen} />
@@ -141,19 +141,19 @@ export default function Sidebar({
           {/* New Chat Button - Takes more space */}
           <button
             onClick={onNewChat}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-[#2c261f] bg-[#1a1917] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:border-[#3a3127] hover:bg-[#22201d]"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-zinc-300 dark:border-[#2c261f] bg-white dark:bg-[#1a1917] px-4 py-2.5 text-sm font-medium text-zinc-800 dark:text-white transition-colors hover:border-zinc-400 dark:hover:border-[#3a3127] hover:bg-zinc-100 dark:hover:bg-[#22201d]"
           >
             <Plus className="h-4 w-4" />
             <span>New Chat</span>
           </button>
-          
+
           {/* Search Icon - No background */}
           <button
             onClick={() => setIsSearchOpen(true)}
-            className="shrink-0 p-2 text-zinc-400 transition-colors hover:text-zinc-200"
+            className="shrink-0 p-2 text-zinc-600 dark:text-zinc-400 transition-colors hover:text-zinc-900 dark:hover:text-zinc-200 cursor-pointer"
             aria-label="Search chats"
           >
-            <Search className="h-5 w-5" />
+            <Search className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
@@ -161,9 +161,9 @@ export default function Sidebar({
         <div className="flex-1 overflow-y-auto px-3 py-2">
           {groupedSessions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <MessageSquare className="mb-2 h-8 w-8 text-zinc-600" />
+              <MessageSquare className="mb-2 h-8 w-8 text-zinc-400 dark:text-zinc-600" />
               <p className="text-sm text-zinc-500">No conversations yet</p>
-              <p className="text-xs text-zinc-600">Start a new chat to begin</p>
+              <p className="text-xs text-zinc-400 dark:text-zinc-600">Start a new chat to begin</p>
             </div>
           ) : (
             groupedSessions.map((group) => (
@@ -182,14 +182,14 @@ export default function Sidebar({
                         className={`
                           group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors border
                           ${isActive
-                            ? 'bg-[#1f1e1c] text-white ring-1 ring-[#de6b35]/50 border-[#de6b35]/40 shadow-[inset_2px_0_0_0_#de6b35]' 
-                            : 'border-transparent text-zinc-400 hover:bg-[#1a1917] hover:text-white'}
+                            ? 'bg-zinc-200 dark:bg-[#1f1e1c] text-zinc-900 dark:text-white ring-1 ring-[#de6b35]/50 border-[#de6b35]/40 shadow-[inset_2px_0_0_0_#de6b35]'
+                            : 'border-transparent text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-[#1a1917] hover:text-zinc-900 dark:hover:text-white'}
                         `}
                       >
                         {isTitleLoading ? (
-                          <span className="relative block h-4 w-28 overflow-hidden rounded bg-gradient-to-r from-[#25221f] via-[#302b26] to-[#25221f] text-transparent">
+                          <span className="relative block h-4 w-28 overflow-hidden rounded bg-gradient-to-r from-zinc-200 dark:from-[#25221f] via-zinc-300 dark:via-[#302b26] to-zinc-200 dark:to-[#25221f] text-transparent">
                             <span className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/12 to-transparent" />
-                            <span className="absolute right-2 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-white/50 animate-ping" />
+                            <span className="absolute right-2 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-zinc-400 dark:bg-white/50 animate-ping" />
                           </span>
                         ) : (
                           <span className={`truncate ${isActive ? 'font-semibold' : ''}`} title={session.title}>{session.title}</span>
@@ -200,9 +200,10 @@ export default function Sidebar({
                               e.stopPropagation()
                               onDeleteSession(session.id)
                             }}
-                            className="opacity-0 rounded p-1 text-zinc-500 transition hover:bg-[#23201d] hover:text-red-400 group-hover:opacity-100"
+                            className="opacity-0 rounded p-1 text-zinc-500 dark:text-zinc-500 transition hover:bg-zinc-300 dark:hover:bg-[#23201d] hover:text-red-600 dark:hover:text-red-400 group-hover:opacity-100"
+                            aria-label="Delete conversation"
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                           </button>
                         )}
                       </div>
@@ -215,7 +216,7 @@ export default function Sidebar({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-[#1f1e1c] p-4">
+        <div className="border-t border-zinc-200 dark:border-[#1f1e1c] p-4">
           <UserMenu
             userName={userName}
             userPlan={userPlan}
@@ -231,7 +232,7 @@ export default function Sidebar({
         animate={{ x: 0, opacity: isOpen ? 0 : 1, scale: isOpen ? 0.96 : 1 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
         onClick={onToggle}
-        className="fixed left-3 top-4 z-[60] flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-[#141312] text-white shadow-lg shadow-black/40 backdrop-blur hover:border-[#de6b35] hover:bg-[#1a1917]"
+        className="fixed left-3 top-4 z-[60] flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-300 dark:border-white/10 bg-white dark:bg-[#141312] text-zinc-700 dark:text-white shadow-lg shadow-black/10 dark:shadow-black/40 backdrop-blur hover:border-[#de6b35] hover:bg-zinc-100 dark:hover:bg-[#1a1917] cursor-pointer"
         aria-label={isOpen ? 'Close sidebar' : 'Open sidebar'}
         style={{ pointerEvents: isOpen ? 'none' : 'auto' }}
       >

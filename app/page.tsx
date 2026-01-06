@@ -249,7 +249,7 @@ export default function ChatPage() {
 
   return (
     <div
-      className={`flex h-screen bg-[radial-gradient(circle_at_20%_0%,rgba(222,107,53,0.12),transparent_28%),radial-gradient(circle_at_80%_10%,rgba(255,255,255,0.04),transparent_30%),#0f0f0e] text-white transition-all duration-300 ease-out ${user && isSidebarOpen ? 'lg:pl-64' : 'lg:pl-0'}`}
+      className={`flex h-screen bg-zinc-50 dark:bg-[#0f0f0e] text-zinc-900 dark:text-white transition-all duration-300 ease-out ${user && isSidebarOpen ? 'lg:pl-64' : 'lg:pl-0'}`}
     >
       {/* Error toast */}
       {error && (
@@ -258,22 +258,22 @@ export default function ChatPage() {
 
       {/* Sign-in prompt for guests */}
       {showSignInPrompt && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 px-4">
-          <div className="w-full max-w-md rounded-2xl border border-[#2c261f] bg-[#141312] p-6 shadow-2xl shadow-black/40">
-            <div className="mb-4 text-lg font-semibold">Sign in for personalized SELVE chat</div>
-            <p className="mb-6 text-sm text-zinc-300">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 dark:bg-black/70 px-4">
+          <div className="w-full max-w-md rounded-2xl border border-zinc-300 dark:border-[#2c261f] bg-white dark:bg-[#141312] p-6 shadow-2xl shadow-black/20 dark:shadow-black/40">
+            <div className="mb-4 text-lg font-semibold text-zinc-900 dark:text-white">Sign in for personalized SELVE chat</div>
+            <p className="mb-6 text-sm text-zinc-600 dark:text-zinc-300">
               Sign in to sync your assessment scores, save conversations, and get tailored insights. You can continue as a guest if you prefer.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
               <button
                 onClick={dismissSignInPrompt}
-                className="rounded-lg border border-[#2c261f] px-4 py-2 text-sm font-medium text-white transition hover:border-[#3a3127] hover:bg-[#1a1917]"
+                className="rounded-lg border border-zinc-300 dark:border-[#2c261f] px-4 py-2 text-sm font-medium text-zinc-900 dark:text-white transition hover:border-zinc-400 dark:hover:border-[#3a3127] hover:bg-zinc-100 dark:hover:bg-[#1a1917] cursor-pointer"
               >
                 Continue as guest
               </button>
               <a
                 href={signInUrl}
-                className="rounded-lg border border-transparent bg-[#de6b35] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#f07c45]"
+                className="rounded-lg border border-transparent bg-[#de6b35] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#f07c45] cursor-pointer"
               >
                 Sign in
               </a>

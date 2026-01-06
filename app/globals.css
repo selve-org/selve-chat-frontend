@@ -1,19 +1,10 @@
 @import "tailwindcss";
 
-/* Core dark palette inspired by the Figma capture */
-:root {
-  --background: #0f0f0e;
-  --foreground: #f7f5ef;
-  --sidebar-bg: #111110;
-  --panel: #1a1917;
-  --card-border: #22211f;
-  --text-muted: #8b8a86;
-  --accent: #de6b35;
-  --accent-soft: #2c261f;
-}
+/* Enable class-based dark mode for next-themes compatibility */
+@variant dark (&:where(.dark, .dark *));
 
-/* Light mode palette */
-.light {
+/* Light mode palette (default) */
+:root {
   --background: #ffffff;
   --foreground: #0f0f0e;
   --sidebar-bg: #f8f8f8;
@@ -24,6 +15,18 @@
   --accent-soft: #fef2ee;
 }
 
+/* Dark mode palette */
+.dark {
+  --background: #0f0f0e;
+  --foreground: #f7f5ef;
+  --sidebar-bg: #111110;
+  --panel: #1a1917;
+  --card-border: #22211f;
+  --text-muted: #8b8a86;
+  --accent: #de6b35;
+  --accent-soft: #2c261f;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -32,8 +35,6 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
@@ -62,6 +63,10 @@ body {
   font-family: 'Inter', -apple-system, system-ui, sans-serif;
   font-size: 15px;
   line-height: 1.7;
+  color: #18181b;
+}
+
+.dark .selve-markdown {
   color: #f4f0e6;
 }
 
@@ -70,28 +75,44 @@ body {
   font-size: 24px;
   font-weight: 700;
   margin: 24px 0 16px;
-  color: #ffffff;
+  color: #09090b;
   letter-spacing: -0.02em;
+}
+
+.dark .selve-markdown h1 {
+  color: #ffffff;
 }
 
 .selve-markdown h2 {
   font-size: 20px;
   font-weight: 600;
   margin: 20px 0 12px;
-  color: #fafafa;
+  color: #18181b;
   letter-spacing: -0.01em;
+}
+
+.dark .selve-markdown h2 {
+  color: #fafafa;
 }
 
 .selve-markdown h3 {
   font-size: 17px;
   font-weight: 600;
   margin: 16px 0 8px;
+  color: #27272a;
+}
+
+.dark .selve-markdown h3 {
   color: #f5f5f5;
 }
 
 /* Paragraphs */
 .selve-markdown p {
   margin: 12px 0;
+  color: #18181b;
+}
+
+.dark .selve-markdown p {
   color: #f4f0e6;
 }
 
@@ -123,18 +144,27 @@ body {
   background: rgba(157, 123, 255, 0.08);
   border-radius: 0 6px 6px 0;
   font-style: italic;
+  color: #3f3f46;
+}
+
+.dark .selve-markdown blockquote {
   color: #e8e4d8;
 }
 
 /* Inline Code */
 .selve-markdown code {
   font-family: 'Fira Code', 'SF Mono', 'Courier New', monospace;
-  background: rgba(255, 255, 255, 0.08);
-  color: #ff6eb6;
+  background: rgba(0, 0, 0, 0.06);
+  color: #db2777;
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 13.5px;
   font-weight: 500;
+}
+
+.dark .selve-markdown code {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ff6eb6;
 }
 
 /* Code Blocks - handled by SyntaxHighlighter */
@@ -156,21 +186,35 @@ body {
   width: 100%;
   border-collapse: collapse;
   margin: 16px 0;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(0, 0, 0, 0.02);
   border-radius: 8px;
   overflow: hidden;
+}
+
+.dark .selve-markdown table {
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .selve-markdown th,
 .selve-markdown td {
   padding: 10px 14px;
   text-align: left;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.dark .selve-markdown th,
+.dark .selve-markdown td {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .selve-markdown th {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.04);
   font-weight: 600;
+  color: #09090b;
+}
+
+.dark .selve-markdown th {
+  background: rgba(255, 255, 255, 0.05);
   color: #ffffff;
 }
 
@@ -180,13 +224,23 @@ body {
 
 /* Links */
 .selve-markdown a {
-  color: #cbb2ff;
+  color: #7c3aed;
   text-decoration: underline;
-  text-decoration-color: rgba(203, 178, 255, 0.3);
+  text-decoration-color: rgba(124, 58, 237, 0.3);
   transition: all 0.2s ease;
 }
 
+.dark .selve-markdown a {
+  color: #cbb2ff;
+  text-decoration-color: rgba(203, 178, 255, 0.3);
+}
+
 .selve-markdown a:hover {
+  color: #6d28d9;
+  text-decoration-color: rgba(124, 58, 237, 0.6);
+}
+
+.dark .selve-markdown a:hover {
   color: #ddc9ff;
   text-decoration-color: rgba(203, 178, 255, 0.6);
 }
@@ -194,11 +248,19 @@ body {
 /* Emphasis */
 .selve-markdown strong {
   font-weight: 600;
+  color: #09090b;
+}
+
+.dark .selve-markdown strong {
   color: #ffffff;
 }
 
 .selve-markdown em {
   font-style: italic;
+  color: #3f3f46;
+}
+
+.dark .selve-markdown em {
   color: #e8e4d8;
 }
 
@@ -206,6 +268,10 @@ body {
 .selve-markdown hr {
   margin: 24px 0;
   border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark .selve-markdown hr {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
