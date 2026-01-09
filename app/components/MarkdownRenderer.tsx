@@ -1,9 +1,8 @@
 'use client'
 
-import React, { useMemo, useEffect, useState, useCallback, memo } from 'react'
+import React, { useMemo, useEffect, useState, useCallback, memo, useRef } from 'react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import type DOMPurify from 'dompurify'
 
 // =============================================================================
 // TYPES
@@ -18,6 +17,11 @@ interface ParsedPart {
   type: 'text' | 'code'
   content: string
   language?: string
+}
+
+// DOMPurify type for the loaded module
+type DOMPurifyInstance = {
+  sanitize: (dirty: string, config?: Record<string, unknown>) => string
 }
 
 // =============================================================================
@@ -505,13 +509,34 @@ const CodeBlock = memo(function CodeBlock({ content, language }: CodeBlockProps)
 interface TextBlockProps {
   content: string
   sanitize: (html: string) => string
+  isSanitizationReady: boolean
 }
 
-const TextBlock = memo(function TextBlock({ content, sanitize }: TextBlockProps) {
+/**
+ * Renders processed markdown HTML safely.
+ * Only renders processed HTML when sanitizer is ready.
+ * Falls back to plain text rendering if sanitization unavailable.
+ */
+const TextBlock = memo(function TextBlock({ content, sanitize, isSanitizationReady }: TextBlockProps) {
   const processedHtml = useMemo(() => {
+    if (!isSanitizationReady) {
+      // Return null - component will show plain text fallback
+      return null
+    }
     const html = processBlockMarkdown(content)
     return sanitize(html)
-  }, [content, sanitize])
+  }, [content, sanitize, isSanitizationReady])
+
+  // If sanitization not ready, render as plain text (safe fallback)
+  if (!isSanitizationReady || processedHtml === null) {
+    return (
+      <div className="selve-markdown-text">
+        <p className="my-3 leading-relaxed text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
+          {content}
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -522,70 +547,140 @@ const TextBlock = memo(function TextBlock({ content, sanitize }: TextBlockProps)
 })
 
 // =============================================================================
+// DOMPURIFY SINGLETON LOADER
+// =============================================================================
+
+// Module-level cache for DOMPurify instance (singleton pattern)
+let cachedDOMPurify: DOMPurifyInstance | null = null
+let loadingPromise: Promise<DOMPurifyInstance | null> | null = null
+let loadAttempted = false
+
+/**
+ * Loads DOMPurify as a singleton with caching.
+ * Ensures only one instance exists across all component instances.
+ */
+async function loadDOMPurifySingleton(): Promise<DOMPurifyInstance | null> {
+  // Server-side: return null immediately
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  // Return cached instance if available
+  if (cachedDOMPurify) {
+    return cachedDOMPurify
+  }
+
+  // Return existing promise if loading is in progress
+  if (loadingPromise) {
+    return loadingPromise
+  }
+
+  // Start loading
+  loadAttempted = true
+  loadingPromise = import('dompurify')
+    .then((module) => {
+      const purify = module.default
+      if (purify && typeof purify.sanitize === 'function') {
+        cachedDOMPurify = purify as DOMPurifyInstance
+        return cachedDOMPurify
+      }
+      console.error('[MarkdownRenderer] DOMPurify loaded but sanitize method not found')
+      return null
+    })
+    .catch((err) => {
+      console.error('[MarkdownRenderer] Failed to load DOMPurify:', err)
+      loadingPromise = null
+      return null
+    })
+
+  return loadingPromise
+}
+
+// =============================================================================
 // MAIN COMPONENT
 // =============================================================================
 
+/**
+ * MarkdownRenderer - Production-grade markdown rendering component
+ * 
+ * Features:
+ * - XSS protection via DOMPurify
+ * - Syntax highlighting for code blocks
+ * - Graceful fallback when sanitization unavailable
+ * - Memoized for performance
+ * - SSR compatible
+ */
 function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
-  const [DOMPurify, setDOMPurify] = useState<any>(null)
-  const [isReady, setIsReady] = useState(false)
+  const [purifyInstance, setPurifyInstance] = useState<DOMPurifyInstance | null>(cachedDOMPurify)
+  const [loadingState, setLoadingState] = useState<'loading' | 'ready' | 'failed'>(
+    cachedDOMPurify ? 'ready' : 'loading'
+  )
+  const mountedRef = useRef(true)
 
   // Load DOMPurify on client side
   useEffect(() => {
-    let mounted = true
+    mountedRef.current = true
 
-    if (typeof window !== 'undefined') {
-      import('dompurify')
-        .then((module) => {
-          if (mounted) {
-            const purify = module.default
-            // Verify sanitize method exists
-            if (purify && typeof purify.sanitize === 'function') {
-              setDOMPurify(purify)
-            } else {
-              console.error('DOMPurify loaded but sanitize method not found')
-            }
-            setIsReady(true)
-          }
-        })
-        .catch((err) => {
-          console.error('Failed to load DOMPurify:', err)
-          // Still set ready to allow rendering with basic escaping
-          if (mounted) {
-            setIsReady(true)
-          }
-        })
-    } else {
-      // Server-side: set ready immediately
-      setIsReady(true)
+    // Skip if already loaded
+    if (cachedDOMPurify) {
+      setPurifyInstance(cachedDOMPurify)
+      setLoadingState('ready')
+      return
     }
 
+    // Skip on server
+    if (typeof window === 'undefined') {
+      setLoadingState('ready')
+      return
+    }
+
+    loadDOMPurifySingleton()
+      .then((instance) => {
+        if (mountedRef.current) {
+          setPurifyInstance(instance)
+          setLoadingState(instance ? 'ready' : 'failed')
+        }
+      })
+      .catch(() => {
+        if (mountedRef.current) {
+          setLoadingState('failed')
+        }
+      })
+
     return () => {
-      mounted = false
+      mountedRef.current = false
     }
   }, [])
 
-  // Memoized sanitizer function
+  // Memoized sanitizer function - only sanitizes if DOMPurify is available
   const sanitize = useCallback(
     (html: string): string => {
-      if (DOMPurify && typeof DOMPurify.sanitize === 'function' && typeof window !== 'undefined') {
-        try {
-          return DOMPurify.sanitize(html, DOMPURIFY_CONFIG) as string
-        } catch (err) {
-          console.error('DOMPurify sanitization failed:', err)
-          return escapeHtml(html)
-        }
+      if (!purifyInstance || typeof window === 'undefined') {
+        // This shouldn't be called when purifyInstance is null
+        // because isSanitizationReady will be false
+        console.warn('[MarkdownRenderer] sanitize called without DOMPurify')
+        return ''
       }
-      // Fallback: return escaped version during SSR or if DOMPurify not ready
-      return escapeHtml(html)
+      
+      try {
+        return purifyInstance.sanitize(html, DOMPURIFY_CONFIG)
+      } catch (err) {
+        console.error('[MarkdownRenderer] DOMPurify sanitization failed:', err)
+        // Return empty string - let the component show fallback
+        return ''
+      }
     },
-    [DOMPurify]
+    [purifyInstance]
   )
+
+  // Determine if sanitization is ready
+  const isSanitizationReady = loadingState === 'ready' && purifyInstance !== null
 
   // Parse content into parts
   const parts = useMemo(() => parseCodeBlocks(content), [content])
 
-  // Render loading state during SSR or while loading DOMPurify
-  if (!isReady && typeof window !== 'undefined') {
+  // Render loading state while DOMPurify loads (client-side only)
+  if (loadingState === 'loading' && typeof window !== 'undefined') {
     return (
       <div className={`selve-markdown prose dark:prose-invert max-w-none ${className}`}>
         <div className="animate-pulse">
@@ -615,6 +710,7 @@ function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
             key={`text-${idx}`}
             content={part.content}
             sanitize={sanitize}
+            isSanitizationReady={isSanitizationReady}
           />
         )
       })}
