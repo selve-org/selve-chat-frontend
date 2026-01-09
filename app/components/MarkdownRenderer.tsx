@@ -537,7 +537,13 @@ function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
       import('dompurify')
         .then((module) => {
           if (mounted) {
-            setDOMPurify(module.default)
+            const purify = module.default
+            // Verify sanitize method exists
+            if (purify && typeof purify.sanitize === 'function') {
+              setDOMPurify(purify)
+            } else {
+              console.error('DOMPurify loaded but sanitize method not found')
+            }
             setIsReady(true)
           }
         })
@@ -548,6 +554,9 @@ function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
             setIsReady(true)
           }
         })
+    } else {
+      // Server-side: set ready immediately
+      setIsReady(true)
     }
 
     return () => {
@@ -558,12 +567,16 @@ function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
   // Memoized sanitizer function
   const sanitize = useCallback(
     (html: string): string => {
-      if (DOMPurify && typeof window !== 'undefined') {
-        return DOMPurify.sanitize(html, DOMPURIFY_CONFIG) as string
+      if (DOMPurify && typeof DOMPurify.sanitize === 'function' && typeof window !== 'undefined') {
+        try {
+          return DOMPurify.sanitize(html, DOMPURIFY_CONFIG) as string
+        } catch (err) {
+          console.error('DOMPurify sanitization failed:', err)
+          return escapeHtml(html)
+        }
       }
-      // Fallback: return escaped version during SSR or if DOMPurify fails
-      // The HTML has already been escaped during processing, so this is safe
-      return html
+      // Fallback: return escaped version during SSR or if DOMPurify not ready
+      return escapeHtml(html)
     },
     [DOMPurify]
   )
