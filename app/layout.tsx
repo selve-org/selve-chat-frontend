@@ -68,6 +68,10 @@ export default function RootLayout({
           <link rel="icon" href="/favicon.ico" sizes="any" />
           <link rel="apple-touch-icon" href="/logo/selve-chat-logo.png" />
           <meta name="theme-color" content="#de6b35" />
+        </head>
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-black text-zinc-900 dark:text-white min-h-screen`}
+        >
           {/* Google Analytics */}
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
@@ -81,10 +85,7 @@ export default function RootLayout({
               gtag('config', '${GA_MEASUREMENT_ID}');
             `}
           </Script>
-        </head>
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-black text-zinc-900 dark:text-white min-h-screen`}
-        >
+
           <PostHogProvider>
             <ThemeProvider>
               <ConsoleBrand>{children}</ConsoleBrand>
