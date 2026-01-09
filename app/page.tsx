@@ -264,7 +264,7 @@ export default function ChatPage() {
             <p className="mb-6 text-sm text-zinc-600 dark:text-zinc-300">
               Sign in to sync your assessment scores, save conversations, and get tailored insights. You can continue as a guest if you prefer.
             </p>
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <div className="flex flex-col gap-3 sm:flex-row justify-center">
               <button
                 onClick={dismissSignInPrompt}
                 className="rounded-lg border border-zinc-300 dark:border-[#2c261f] px-4 py-2 text-sm font-medium text-zinc-900 dark:text-white transition hover:border-zinc-400 dark:hover:border-[#3a3127] hover:bg-zinc-100 dark:hover:bg-[#1a1917] cursor-pointer"
@@ -273,7 +273,7 @@ export default function ChatPage() {
               </button>
               <a
                 href={signInUrl}
-                className="rounded-lg border border-transparent bg-[#de6b35] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#f07c45] cursor-pointer"
+                className="flex items-center justify-center rounded-lg bg-[#de6b35] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#f07c45] cursor-pointer"
               >
                 Sign in
               </a>
