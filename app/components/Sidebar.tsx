@@ -216,7 +216,7 @@ export default function Sidebar({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-zinc-200 dark:border-[#1f1e1c] p-4">
+        <div className="p-4">
           <UserMenu
             userName={userName}
             userPlan={userPlan}

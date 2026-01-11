@@ -60,7 +60,7 @@ export default function ChatInput({
   }, [value])
 
   return (
-    <footer className="border-t border-zinc-200 dark:border-[#1f1e1c] bg-zinc-50 dark:bg-[#0f0f0e] px-4 py-4">
+    <footer className="bg-zinc-50 dark:bg-[#0f0f0e] px-4 py-4">
       <div className="mx-auto w-full max-w-4xl space-y-3 px-2 sm:px-8 md:px-10 lg:px-12">
         {/* Suggestion chips */}
         {suggestions.length > 0 && !value && (
