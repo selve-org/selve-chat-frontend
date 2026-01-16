@@ -116,10 +116,10 @@ export default function Sidebar({
         initial={false}
         animate={isOpen ? 'open' : 'closed'}
         variants={sidebarVariants}
-        className="fixed left-0 top-0 z-50 flex h-full w-64 flex-col border-r border-zinc-200 dark:border-[#1f1e1c] bg-zinc-50 dark:bg-[#111110]"
+        className="fixed left-0 top-0 z-50 flex h-full w-64 flex-col border-r border-zinc-200/30 dark:border-[#1f1e1c]/30 bg-[#faf9f7]/80 dark:bg-[#0d0f14]/80 backdrop-blur-md"
       >
         {/* Header */}
-        <div className="flex items-center gap-3 border-b border-zinc-200 dark:border-[#1f1e1c] px-4 py-3">
+        <div className="flex items-center gap-3 border-b border-zinc-200/30 dark:border-[#1f1e1c]/30 px-4 py-3">
           <a
             href={homeUrl}
             className="rounded-lg p-1 transition-colors hover:bg-zinc-200 dark:hover:bg-[#1a1917]"

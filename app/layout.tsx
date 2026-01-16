@@ -4,6 +4,7 @@ import Script from "next/script";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ConsoleBrand } from "./components/ConsoleBrand";
 import { ThemeProvider } from "./components/ThemeProvider";
+import { SunlitBackground } from "./components/SunlitBackground";
 import { PostHogProvider } from "./providers";
 import "./globals.css";
 
@@ -70,7 +71,7 @@ export default function RootLayout({
           <meta name="theme-color" content="#de6b35" />
         </head>
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-black text-zinc-900 dark:text-white min-h-screen`}
+          className={`${geistSans.variable} ${geistMono.variable} antialiased text-zinc-900 dark:text-white min-h-screen`}
         >
           {/* Google Analytics */}
           <Script
@@ -92,6 +93,7 @@ export default function RootLayout({
 
           <PostHogProvider>
             <ThemeProvider>
+              <SunlitBackground />
               <ConsoleBrand>{children}</ConsoleBrand>
             </ThemeProvider>
           </PostHogProvider>
