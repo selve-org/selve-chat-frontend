@@ -15,7 +15,7 @@ export default function TopBar({
   showMenuButton = true,
 }: TopBarProps) {
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between bg-zinc-50 dark:bg-[#0f0f0e] px-4">
+    <header className="flex h-14 shrink-0 items-center justify-between bg-[#faf9f7]/80 dark:bg-[#0d0f14]/80 backdrop-blur-md px-4 border-b border-zinc-200/30 dark:border-[#1f1e1c]/30">
       {/* Left side */}
       <div className="flex items-center gap-4">
         {showMenuButton && (

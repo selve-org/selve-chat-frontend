@@ -249,7 +249,7 @@ export default function ChatPage() {
 
   return (
     <div
-      className={`flex h-screen bg-zinc-50 dark:bg-[#0f0f0e] text-zinc-900 dark:text-white transition-all duration-300 ease-out ${user && isSidebarOpen ? 'lg:pl-64' : 'lg:pl-0'}`}
+      className={`relative z-10 flex h-screen text-zinc-900 dark:text-white transition-all duration-300 ease-out ${user && isSidebarOpen ? 'lg:pl-64' : 'lg:pl-0'}`}
     >
       {/* Error toast */}
       {error && (

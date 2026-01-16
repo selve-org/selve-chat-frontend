@@ -60,7 +60,7 @@ export default function ChatInput({
   }, [value])
 
   return (
-    <footer className="bg-zinc-50 dark:bg-[#0f0f0e] px-4 py-4">
+    <footer className="px-4 py-4">
       <div className="mx-auto w-full max-w-4xl space-y-3 px-2 sm:px-8 md:px-10 lg:px-12">
         {/* Suggestion chips */}
         {suggestions.length > 0 && !value && (
@@ -80,7 +80,7 @@ export default function ChatInput({
 
         {/* Input area */}
         <form onSubmit={onSubmit} className="relative">
-          <div className="flex items-end gap-3 rounded-3xl border border-zinc-300 dark:border-[#24221f] bg-white dark:bg-[#1a1917] px-4 py-2 focus-within:border-[#9d7bff] focus-within:ring-2 focus-within:ring-[#9d7bff]/25 shadow-sm dark:shadow-none">
+          <div className="flex items-end gap-3 rounded-3xl border border-zinc-300/50 dark:border-[#24221f]/50 bg-white/70 dark:bg-[#1a1917]/70 backdrop-blur-sm px-4 py-2 focus-within:border-[#9d7bff] focus-within:ring-2 focus-within:ring-[#9d7bff]/25 shadow-sm dark:shadow-none">
             {/* Textarea */}
             <div className="relative flex-1">
               <textarea

@@ -1,0 +1,314 @@
+/**
+ * Sunlit Dappled Light Theme
+ * 
+ * Ambient background effect with window blinds, billowing leaves, and 
+ * sunrise/sunset transitions synchronized with app theme.
+ * 
+ * Inspired by daylightcomputer.com and sunlit.place
+ */
+
+/* ============================================================================
+   COLOR PALETTE & CSS CUSTOM PROPERTIES
+   ============================================================================ */
+
+body {
+  --sunlit-day: #fffdfa;
+  --sunlit-evening: #fccc83;
+  --sunlit-dusk: #db7a2a;
+  --sunlit-night: #0f131c;
+  --sunlit-dawn: #16132b;
+  --sunlit-morning: #9fb3bf;
+  --sunlit-light: var(--sunlit-day);
+  --sunlit-dark: var(--sunlit-night);
+  --sunlit-shadow: #1a1917;
+  --sunlit-bounce-light: #f5d7a6;
+  --sunlit-timing-fn: cubic-bezier(0.455, 0.190, 0.000, 0.985);
+}
+
+/* Dark mode palette override */
+body.sunlit-dark {
+  --sunlit-light: var(--sunlit-night);
+  --sunlit-dark: var(--sunlit-day);
+  --sunlit-shadow: #030307;
+  --sunlit-bounce-light: #1b293f;
+}
+
+/* ============================================================================
+   ANIMATION READINESS & THEME TRANSITIONS
+   ============================================================================ */
+
+/* Sunlit animations start paused, enabled after component mount */
+body.sunlit-animation-ready #sunlit-dappled-light {
+  animation-play-state: running;
+  animation-duration: 1s;
+  animation-name: sunlit-sunrise;
+}
+
+body.sunlit-animation-ready.sunlit-dark #sunlit-dappled-light {
+  animation-duration: 1.7s;
+  animation-name: sunlit-sunset;
+}
+
+/* ============================================================================
+   MAIN CONTAINER
+   ============================================================================ */
+
+#sunlit-dappled-light {
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  z-index: 0;
+  background-color: var(--sunlit-light);
+  animation-duration: 0s;
+  animation-fill-mode: forwards;
+  animation-timing-function: linear;
+}
+
+/* ============================================================================
+   PROGRESSIVE BLUR LAYERS (Depth Effect)
+   ============================================================================ */
+
+#sunlit-progressive-blur {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+}
+
+#sunlit-progressive-blur > div {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  inset: 0;
+  backdrop-filter: blur(var(--sunlit-blur-amount));
+  mask-image: linear-gradient(
+    252deg,
+    transparent,
+    transparent var(--sunlit-stop1),
+    black var(--sunlit-stop2),
+    black
+  );
+}
+
+#sunlit-progressive-blur > div:nth-child(1) {
+  --sunlit-blur-amount: 6px;
+  --sunlit-stop1: 0%;
+  --sunlit-stop2: 0%;
+}
+
+#sunlit-progressive-blur > div:nth-child(2) {
+  --sunlit-blur-amount: 12px;
+  --sunlit-stop1: 40%;
+  --sunlit-stop2: 80%;
+}
+
+#sunlit-progressive-blur > div:nth-child(3) {
+  --sunlit-blur-amount: 48px;
+  --sunlit-stop1: 40%;
+  --sunlit-stop2: 70%;
+}
+
+#sunlit-progressive-blur > div:nth-child(4) {
+  --sunlit-blur-amount: 96px;
+  --sunlit-stop1: 70%;
+  --sunlit-stop2: 80%;
+}
+
+/* ============================================================================
+   AMBIENT GLOW EFFECTS
+   ============================================================================ */
+
+#sunlit-glow {
+  position: absolute;
+  background: linear-gradient(
+    309deg,
+    var(--sunlit-bounce-light),
+    var(--sunlit-bounce-light) 20%,
+    transparent
+  );
+  transition: background 1.0s var(--sunlit-timing-fn);
+  height: 100%;
+  width: 100%;
+  opacity: 0.5;
+}
+
+#sunlit-glow-bounce {
+  content: "";
+  position: absolute;
+  background: linear-gradient(
+    355deg,
+    var(--sunlit-bounce-light) 0%,
+    transparent 30%,
+    transparent 100%
+  );
+  transition: background 1.0s var(--sunlit-timing-fn);
+  opacity: 0.5;
+  height: 100%;
+  width: 100%;
+  bottom: 0;
+}
+
+/* ============================================================================
+   3D PERSPECTIVE CONTAINER
+   ============================================================================ */
+
+.sunlit-perspective {
+  position: absolute;
+  transition: transform 1.7s var(--sunlit-timing-fn), opacity 4s ease;
+  top: -30vh;
+  right: 0;
+  width: 80vw;
+  height: 130vh;
+  opacity: 0.07;
+  background-blend-mode: darken;
+  transform-origin: top right;
+  transform-style: preserve-3d;
+  /* Light mode perspective transform - calculated via homography matrix */
+  transform: matrix3d(
+    0.7500, -0.0625, 0.0000, 0.0008,
+    0.0000, 1.0000, 0.0000, 0.0000,
+    0.0000, 0.0000, 1.0000, 0.0000,
+    0.0000, 0.0000, 0.0000, 1.0000
+  );
+}
+
+.sunlit-dark .sunlit-perspective {
+  opacity: 0.3;
+  /* Dark mode perspective transform - more upright */
+  transform: matrix3d(
+    0.8333, 0.0833, 0.0000, 0.0003,
+    0.0000, 1.0000, 0.0000, 0.0000,
+    0.0000, 0.0000, 1.0000, 0.0000,
+    0.0000, 0.0000, 0.0000, 1.0000
+  );
+}
+
+/* ============================================================================
+   BILLOWING LEAVES
+   ============================================================================ */
+
+#sunlit-leaves {
+  position: absolute;
+  background-size: cover;
+  background-repeat: no-repeat;
+  bottom: -20px;
+  right: -700px;
+  width: 1600px;
+  height: 1400px;
+  background-image: url("/sunlit/leaves.png");
+  filter: url(#sunlit-wind);
+  animation: sunlit-billow 8s ease-in-out infinite;
+}
+
+/* ============================================================================
+   WINDOW BLINDS STRUCTURE
+   ============================================================================ */
+
+#sunlit-blinds {
+  position: relative;
+  width: 100%;
+}
+
+#sunlit-blinds .sunlit-shutter,
+#sunlit-blinds .sunlit-bar {
+  background-color: var(--sunlit-shadow);
+}
+
+/* Horizontal shutters */
+#sunlit-blinds > .sunlit-shutters {
+  display: flex;
+  flex-direction: column;
+  align-items: end;
+  gap: 60px;
+  transition: gap 1.0s var(--sunlit-timing-fn);
+}
+
+.sunlit-dark #sunlit-blinds > .sunlit-shutters {
+  gap: 20px;
+}
+
+/* Vertical bars */
+#sunlit-blinds > .sunlit-vertical {
+  top: 0;
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+}
+
+.sunlit-vertical > .sunlit-bar {
+  width: 5px;
+  height: 100%;
+}
+
+/* Individual shutter slats */
+.sunlit-shutter {
+  width: 100%;
+  height: 40px;
+  transition: height 1.0s var(--sunlit-timing-fn);
+}
+
+.sunlit-dark .sunlit-shutter {
+  height: 80px;
+}
+
+/* ============================================================================
+   ANIMATIONS
+   ============================================================================ */
+
+/* Leaf billowing animation */
+@keyframes sunlit-billow {
+  0% {
+    transform: perspective(400px) rotateX(0deg) rotateY(0deg) scale(1);
+  }
+  25% {
+    transform: perspective(400px) rotateX(1deg) rotateY(2deg) scale(1.02);
+  }
+  50% {
+    transform: perspective(400px) rotateX(-4deg) rotateY(-2deg) scale(0.97);
+  }
+  75% {
+    transform: perspective(400px) rotateX(1deg) rotateY(-1deg) scale(1.04);
+  }
+  100% {
+    transform: perspective(400px) rotateX(0deg) rotateY(0deg) scale(1);
+  }
+}
+
+/* Sunrise transition animation */
+@keyframes sunlit-sunrise {
+  0% {
+    background-color: var(--sunlit-night);
+  }
+  10% {
+    background-color: var(--sunlit-dawn);
+  }
+  35% {
+    background-color: var(--sunlit-morning);
+  }
+  100% {
+    background-color: var(--sunlit-day);
+  }
+}
+
+/* Sunset transition animation */
+@keyframes sunlit-sunset {
+  0% {
+    background-color: var(--sunlit-day);
+  }
+  30% {
+    background-color: var(--sunlit-evening);
+  }
+  60% {
+    background-color: var(--sunlit-dusk);
+  }
+  90% {
+    background-color: var(--sunlit-dawn);
+  }
+  100% {
+    background-color: var(--sunlit-night);
+  }
+}
