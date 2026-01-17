@@ -134,13 +134,6 @@ export default function ThinkingIndicator({ status, isVisible }: ThinkingIndicat
       <span className={`${config.text} animate-pulse`}>
         {status.message || 'Processing...'}
       </span>
-
-      {/* Optional step counter */}
-      {status.details?.phase && status.details?.total_phases && (
-        <span className="text-xs text-gray-400 dark:text-gray-500">
-          ({status.details.phase}/{status.details.total_phases})
-        </span>
-      )}
     </div>
   )
 }
