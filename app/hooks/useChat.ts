@@ -41,6 +41,7 @@ export interface UserAccount {
   clerk_user_id?: string
   user_name?: string
   email?: string
+  profile_picture?: string
   has_assessment?: boolean
   subscription_plan?: string
 }

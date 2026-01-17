@@ -8,11 +8,12 @@ import { Sun, Moon, Monitor, Settings, LogOut, ExternalLink, BarChart3, DollarSi
 interface UserMenuProps {
   userName?: string
   userPlan?: string
+  profilePicture?: string
   isSignedIn?: boolean
   signInUrl?: string
 }
 
-export default function UserMenu({ userName, userPlan, isSignedIn, signInUrl }: UserMenuProps) {
+export default function UserMenu({ userName, userPlan, profilePicture, isSignedIn, signInUrl }: UserMenuProps) {
   const { user } = useUser()
   const { signOut } = useClerk()
   const { theme, setTheme } = useTheme()
@@ -138,9 +139,17 @@ export default function UserMenu({ userName, userPlan, isSignedIn, signInUrl }: 
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-3 rounded-lg bg-zinc-100 dark:bg-[#151412] px-3 py-3 transition-all hover:bg-zinc-200 dark:hover:bg-[#1a1917] w-full cursor-pointer"
       >
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#b88dff] via-[#7f5af0] to-[#5f3bd8] text-sm font-semibold text-white">
-          {userInitials}
-        </div>
+        {profilePicture ? (
+          <img
+            src={profilePicture}
+            alt={userName || 'Profile'}
+            className="h-9 w-9 shrink-0 rounded-full object-cover"
+          />
+        ) : (
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#b88dff] via-[#7f5af0] to-[#5f3bd8] text-sm font-semibold text-white">
+            {userInitials}
+          </div>
+        )}
         <div className="min-w-0 flex-1 text-left">
           <div className="truncate text-sm font-semibold text-zinc-900 dark:text-white">{userName || user?.fullName || 'SELVE User'}</div>
           <div className="truncate text-xs text-zinc-500">{userPlan || 'Pro plan'}</div>
