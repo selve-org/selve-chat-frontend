@@ -30,6 +30,7 @@ interface SidebarProps {
   onToggle: () => void
   userName?: string
   userPlan?: string
+  profilePicture?: string
   isSignedIn?: boolean
   signInUrl?: string
   currentMessages?: Message[] // Add current session messages for search
@@ -45,6 +46,7 @@ export default function Sidebar({
   onToggle,
   userName,
   userPlan,
+  profilePicture,
   isSignedIn = false,
   signInUrl,
   currentMessages = [],
@@ -220,6 +222,7 @@ export default function Sidebar({
           <UserMenu
             userName={userName}
             userPlan={userPlan}
+            profilePicture={profilePicture}
             isSignedIn={isSignedIn}
             signInUrl={signInUrl}
           />

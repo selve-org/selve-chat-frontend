@@ -294,6 +294,7 @@ export default function ChatPage() {
           onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
           userName={userAccount?.user_name || user?.fullName || user?.firstName || user?.username || undefined}
           userPlan={userAccount?.subscription_plan || userProfile?.subscriptionPlan}
+          profilePicture={userAccount?.profile_picture}
           isSignedIn={!!user}
           signInUrl={signInUrl}
           currentMessages={messages}
