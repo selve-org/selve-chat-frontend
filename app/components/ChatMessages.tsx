@@ -59,7 +59,7 @@ export default function ChatMessages({
 
   // Memoize options to prevent re-creating on every render
   const typewriterOptions = useMemo(() => ({
-    charsPerSecond: 40,        // Slower, more visible typing
+    charsPerSecond: 20,        // Reduced speed by half (was 40)
     naturalVariation: true,    // Feels more natural
     adaptiveSpeed: true,       // Speed up when buffer builds
     speedUpThreshold: 30,      // Start speeding up at 30 char buffer
@@ -69,7 +69,7 @@ export default function ChatMessages({
   // Use simpler setTimeout-based typewriter on mobile (RAF can have issues)
   const rafResult = useStreamingTypewriter(streamingContent, typewriterOptions)
   const simpleResult = useSimpleStreamingTypewriter(streamingContent, {
-    charsPerSecond: 40,
+    charsPerSecond: 20,  // Reduced speed by half (was 40)
     naturalVariation: true
   })
 
