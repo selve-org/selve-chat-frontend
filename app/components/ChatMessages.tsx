@@ -99,7 +99,7 @@ export default function ChatMessages({
                     <textarea
                       value={editingContent}
                       onChange={(e) => onEditingContentChange?.(e.target.value)}
-                      className="w-full min-h-[100px] rounded-2xl bg-zinc-100 dark:bg-[#1a1a1a] border border-zinc-300 dark:border-zinc-700 px-4 py-3 text-sm text-zinc-900 dark:text-white focus:border-purple-500 focus:outline-none resize-y"
+                      className="w-full min-h-[100px] rounded-2xl bg-zinc-100 dark:bg-[#1a1a1a] border border-zinc-300 dark:border-zinc-700 px-4 py-3 text-sm text-zinc-900 dark:text-white focus:border-purple-500 focus:outline-none resize-y transition-colors duration-500"
                       autoFocus
                     />
                     <div className="flex justify-end gap-2">
@@ -121,7 +121,7 @@ export default function ChatMessages({
                   </div>
                 ) : (
                   <>
-                    <div className="rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl rounded-br-sm bg-gradient-to-br from-[#b88dff] via-[#9d7bff] to-[#7f5af0] px-4 py-2.5 text-sm leading-relaxed text-white shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
+                    <div className="rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl rounded-br-sm bg-gradient-to-br from-[#b88dff] via-[#9d7bff] to-[#7f5af0] px-4 py-2.5 text-sm leading-relaxed text-white shadow-[0_10px_30px_rgba(0,0,0,0.35)] transition-all duration-500">
                       <p className="whitespace-pre-wrap">{message.content}</p>
                     </div>
                     <div className="flex justify-end">
@@ -137,7 +137,7 @@ export default function ChatMessages({
           ) : (
             <div className="flex justify-start">
               <div className="w-full space-y-1">
-                <div className="rounded-2xl px-4 py-3 text-sm leading-relaxed text-zinc-800 dark:text-[#f4f0e6]">
+                <div className="rounded-2xl px-4 py-3 text-sm leading-relaxed text-zinc-800 dark:text-[#f4f0e6] transition-colors duration-500">
                   <MarkdownRenderer content={message.content} />
                 </div>
                 <MessageActions

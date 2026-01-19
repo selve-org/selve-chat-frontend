@@ -69,7 +69,7 @@ export default function ChatInput({
               <button
                 key={idx}
                 onClick={() => onSuggestionClick?.(suggestion)}
-                className="rounded-full border border-zinc-300 dark:border-[#2c261f] bg-white dark:bg-[#1a1917] px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200 transition-colors hover:border-zinc-400 dark:hover:border-[#3a3127] hover:bg-zinc-100 dark:hover:bg-[#22201d] cursor-pointer"
+                className="rounded-full border border-zinc-300 dark:border-[#2c261f] bg-white dark:bg-[#1a1917] px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200 transition-all duration-300 hover:border-zinc-400 dark:hover:border-[#3a3127] hover:bg-zinc-100 dark:hover:bg-[#22201d] cursor-pointer"
                 aria-label={`Suggestion: ${suggestion}`}
               >
                 {suggestion}
@@ -80,7 +80,7 @@ export default function ChatInput({
 
         {/* Input area */}
         <form onSubmit={onSubmit} className="relative">
-          <div className="flex items-end gap-3 rounded-3xl border border-zinc-300/50 dark:border-[#24221f]/50 bg-white/70 dark:bg-[#1a1917]/70 backdrop-blur-sm px-4 py-2 focus-within:border-[#9d7bff] focus-within:ring-2 focus-within:ring-[#9d7bff]/25 shadow-sm dark:shadow-none">
+          <div className="flex items-end gap-3 rounded-3xl border border-zinc-300/50 dark:border-[#24221f]/50 bg-white/70 dark:bg-[#1a1917]/70 backdrop-blur-sm px-4 py-2 focus-within:border-[#9d7bff] focus-within:ring-2 focus-within:ring-[#9d7bff]/25 shadow-sm dark:shadow-none transition-all duration-300">
             {/* Textarea */}
             <div className="relative flex-1">
               <textarea
@@ -94,7 +94,7 @@ export default function ChatInput({
                 placeholder=" "
                 disabled={isLoading || isBanned}
                 rows={1}
-                className="max-h-[200px] min-h-[44px] w-full resize-none bg-transparent py-3 text-sm leading-5 text-zinc-900 dark:text-zinc-100 placeholder-transparent focus:outline-none disabled:text-zinc-400"
+                className="max-h-[200px] min-h-[44px] w-full resize-none bg-transparent py-3 text-sm leading-5 text-zinc-900 dark:text-zinc-100 placeholder-transparent focus:outline-none disabled:text-zinc-400 transition-colors duration-300"
               />
               {/* Animated placeholder overlay (welcome screen only) */}
               {!value && !isBanned && !hasMessages && (
@@ -102,7 +102,7 @@ export default function ChatInput({
                   {/* Current text sliding down */}
                   <span
                     key={`current-${currentPlaceholder}`}
-                    className={`absolute text-sm leading-5 text-zinc-400 dark:text-zinc-500 ${isTransitioning ? 'animate-slide-down' : ''}`}
+                    className={`absolute text-sm leading-5 text-zinc-400 dark:text-zinc-500 transition-colors duration-300 ${isTransitioning ? 'animate-slide-down' : ''}`}
                   >
                     {currentPlaceholder}
                   </span>
@@ -110,7 +110,7 @@ export default function ChatInput({
                   {isTransitioning && (
                     <span
                       key={`next-${nextPlaceholder}`}
-                      className="absolute text-sm leading-5 text-zinc-400 dark:text-zinc-500 animate-slide-up"
+                      className="absolute text-sm leading-5 text-zinc-400 dark:text-zinc-500 transition-colors duration-300 animate-slide-up"
                     >
                       {nextPlaceholder}
                     </span>
@@ -120,14 +120,14 @@ export default function ChatInput({
               {/* Static placeholder (after first message) */}
               {!value && !isBanned && hasMessages && (
                 <div className="pointer-events-none absolute inset-0 flex items-center">
-                  <span className="text-sm leading-5 text-zinc-400 dark:text-zinc-500">
+                  <span className="text-sm leading-5 text-zinc-400 dark:text-zinc-500 transition-colors duration-300">
                     {staticPlaceholder}
                   </span>
                 </div>
               )}
               {!value && isBanned && (
                 <div className="pointer-events-none absolute inset-0 flex items-center">
-                  <span className="text-sm leading-5 text-zinc-400 dark:text-zinc-500">SELVE is unavailable</span>
+                  <span className="text-sm leading-5 text-zinc-400 dark:text-zinc-500 transition-colors duration-300">SELVE is unavailable</span>
                 </div>
               )}
             </div>
@@ -145,7 +145,7 @@ export default function ChatInput({
         </form>
 
         {/* Bottom actions */}
-        <div className="flex items-center justify-between text-xs text-zinc-500">
+        <div className="flex items-center justify-between text-xs text-zinc-500 transition-colors duration-300">
           {isBanned && banExpiresAt ? (
             <span className="text-red-400">
               Access restricted. Try again at {new Date(banExpiresAt).toLocaleString()}

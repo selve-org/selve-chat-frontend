@@ -118,20 +118,20 @@ export default function Sidebar({
         initial={false}
         animate={isOpen ? 'open' : 'closed'}
         variants={sidebarVariants}
-        className="fixed left-0 top-0 z-50 flex h-full w-64 flex-col border-r border-zinc-200/30 dark:border-[#1f1e1c]/30 bg-[#faf9f7]/80 dark:bg-[#0d0f14]/80 backdrop-blur-md"
+        className="fixed left-0 top-0 z-50 flex h-full w-64 flex-col border-r border-zinc-200/30 dark:border-[#1f1e1c]/30 bg-[#faf9f7]/80 dark:bg-[#0d0f14]/80 backdrop-blur-md transition-colors duration-300"
       >
         {/* Header */}
-        <div className="flex items-center gap-3 border-b border-zinc-200/30 dark:border-[#1f1e1c]/30 px-4 py-3">
+        <div className="flex items-center gap-3 border-b border-zinc-200/30 dark:border-[#1f1e1c]/30 px-4 py-3 transition-colors duration-300">
           <a
             href={homeUrl}
-            className="rounded-lg p-1 transition-colors hover:bg-zinc-200 dark:hover:bg-[#1a1917]"
+            className="rounded-lg p-1 transition-colors duration-300 hover:bg-zinc-200 dark:hover:bg-[#1a1917]"
             aria-label="SELVE-Chat homepage"
           >
             <SelveLogo />
           </a>
           <button
             onClick={onToggle}
-            className="ml-auto flex items-center justify-center rounded-lg p-2 text-zinc-700 dark:text-white transition-colors hover:bg-zinc-200 dark:hover:bg-[#1a1917] cursor-pointer"
+            className="ml-auto flex items-center justify-center rounded-lg p-2 text-zinc-700 dark:text-white transition-colors duration-300 hover:bg-zinc-200 dark:hover:bg-[#1a1917] cursor-pointer"
             aria-label="Toggle sidebar"
           >
             <AnimatedHamburgerIcon isOpen={isOpen} />
@@ -143,7 +143,7 @@ export default function Sidebar({
           {/* New Chat Button - Takes more space */}
           <button
             onClick={onNewChat}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-zinc-300 dark:border-[#2c261f] bg-white dark:bg-[#1a1917] px-4 py-2.5 text-sm font-medium text-zinc-800 dark:text-white transition-colors hover:border-zinc-400 dark:hover:border-[#3a3127] hover:bg-zinc-100 dark:hover:bg-[#22201d]"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-zinc-300 dark:border-[#2c261f] bg-white dark:bg-[#1a1917] px-4 py-2.5 text-sm font-medium text-zinc-800 dark:text-white transition-all duration-300 hover:border-zinc-400 dark:hover:border-[#3a3127] hover:bg-zinc-100 dark:hover:bg-[#22201d]"
           >
             <Plus className="h-4 w-4" />
             <span>New Chat</span>
@@ -152,7 +152,7 @@ export default function Sidebar({
           {/* Search Icon - No background */}
           <button
             onClick={() => setIsSearchOpen(true)}
-            className="shrink-0 p-2 text-zinc-600 dark:text-zinc-400 transition-colors hover:text-zinc-900 dark:hover:text-zinc-200 cursor-pointer"
+            className="shrink-0 p-2 text-zinc-600 dark:text-zinc-400 transition-colors duration-300 hover:text-zinc-900 dark:hover:text-zinc-200 cursor-pointer"
             aria-label="Search chats"
           >
             <Search className="h-5 w-5" aria-hidden="true" />
@@ -163,14 +163,14 @@ export default function Sidebar({
         <div className="flex-1 overflow-y-auto px-3 py-2">
           {groupedSessions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <MessageSquare className="mb-2 h-8 w-8 text-zinc-400 dark:text-zinc-600" />
-              <p className="text-sm text-zinc-500">No conversations yet</p>
-              <p className="text-xs text-zinc-400 dark:text-zinc-600">Start a new chat to begin</p>
+              <MessageSquare className="mb-2 h-8 w-8 text-zinc-400 dark:text-zinc-600 transition-colors duration-300" />
+              <p className="text-sm text-zinc-500 transition-colors duration-300">No conversations yet</p>
+              <p className="text-xs text-zinc-400 dark:text-zinc-600 transition-colors duration-300">Start a new chat to begin</p>
             </div>
           ) : (
             groupedSessions.map((group) => (
               <div key={group.label} className="mb-4">
-                <div className="mb-2 px-2 text-xs font-medium text-zinc-500">
+                <div className="mb-2 px-2 text-xs font-medium text-zinc-500 transition-colors duration-300">
                   {group.label}
                 </div>
                 <div className="space-y-1">
@@ -182,7 +182,7 @@ export default function Sidebar({
                         key={session.id}
                         onClick={() => onSessionSelect(session.id)}
                         className={`
-                          group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors border
+                          group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm transition-all duration-300 border
                           ${isActive
                             ? 'bg-zinc-200 dark:bg-[#1f1e1c] text-zinc-900 dark:text-white ring-1 ring-[#de6b35]/50 border-[#de6b35]/40 shadow-[inset_2px_0_0_0_#de6b35]'
                             : 'border-transparent text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-[#1a1917] hover:text-zinc-900 dark:hover:text-white'}
@@ -202,7 +202,7 @@ export default function Sidebar({
                               e.stopPropagation()
                               onDeleteSession(session.id)
                             }}
-                            className="opacity-0 rounded p-1 text-zinc-500 dark:text-zinc-500 transition hover:bg-zinc-300 dark:hover:bg-[#23201d] hover:text-red-600 dark:hover:text-red-400 group-hover:opacity-100"
+                            className="opacity-0 rounded p-1 text-zinc-500 dark:text-zinc-500 transition-all duration-300 hover:bg-zinc-300 dark:hover:bg-[#23201d] hover:text-red-600 dark:hover:text-red-400 group-hover:opacity-100"
                             aria-label="Delete conversation"
                           >
                             <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />

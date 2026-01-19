@@ -18,7 +18,7 @@ function FeatureCard({ title, description, icon, lightGradient, darkGradient }: 
         group relative overflow-hidden rounded-xl p-2 sm:p-3 md:p-4
         border border-zinc-200 dark:border-zinc-800
         ${lightGradient}
-        transition-all duration-300 hover:scale-[1.02]
+        transition-all duration-500 hover:scale-[1.02]
         hover:border-zinc-300 dark:hover:border-zinc-700
         hover:shadow-lg dark:hover:shadow-none
         min-w-0
